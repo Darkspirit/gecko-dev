@@ -258,12 +258,12 @@ pref("browser.fixup.dns_first_for_single_words", false);
 
 // UI density of the browser chrome. This mostly affects toolbarbutton
 // and urlbar spacing. The possible values are 0=normal, 1=compact, 2=touch.
-pref("browser.uidensity", 0);
+pref("browser.uidensity", 1);
 // Whether Firefox will automatically override the uidensity to "touch"
 // while the user is in a touch environment (such as Windows tablet mode).
 pref("browser.touchmode.auto", true);
 // Whether Firefox will show the Compact Mode UIDensity option.
-pref("browser.compactmode.show", false);
+pref("browser.compactmode.show", true);
 
 // At startup, check if we're the default browser and prompt user if not.
 pref("browser.shell.checkDefaultBrowser", true);
@@ -294,7 +294,7 @@ pref("browser.shell.defaultBrowserAgent.thanksURL", "https://www.mozilla.org/%LO
 // The behavior of option 3 is detailed at: http://wiki.mozilla.org/Session_Restore
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "about:home");
-pref("browser.startup.homepage.abouthome_cache.enabled", true);
+pref("browser.startup.homepage.abouthome_cache.enabled", false);
 pref("browser.startup.homepage.abouthome_cache.loglevel", "Warn");
 
 // Whether we should skip the homepage when opening the first-run page
@@ -306,11 +306,7 @@ pref("browser.startup.couldRestoreSession.count", 0);
 // Show an about:blank window as early as possible for quick startup feedback.
 // Held to nightly on Linux due to bug 1450626.
 // Disabled on Mac because the bouncing dock icon already provides feedback.
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
-  pref("browser.startup.blankWindow", true);
-#else
-  pref("browser.startup.blankWindow", false);
-#endif
+pref("browser.startup.blankWindow", false);
 
 // Show a skeleton UI window prior to loading libxul. Only visible for windows
 // users as it is not implemented anywhere else.
@@ -645,7 +641,7 @@ pref("browser.download.loglevel", "Error");
 // feedback from their action.
 pref("browser.download.saveLinkAsFilenameTimeout", 4000);
 
-pref("browser.download.useDownloadDir", true);
+pref("browser.download.useDownloadDir", false);
 pref("browser.download.folderList", 1);
 pref("browser.download.manager.addToRecentDocs", true);
 pref("browser.download.manager.resumeOnWakeDelay", 10000);
@@ -667,7 +663,7 @@ pref("browser.download.viewableInternally.enabledTypes", "xml,svg,webp,avif,jxl"
 
 // This controls whether the button is automatically shown/hidden depending
 // on whether there are downloads to show.
-pref("browser.download.autohideButton", true);
+pref("browser.download.autohideButton", false);
 
 // Controls whether to open the downloads panel every time a download begins.
 // The first download ever run in a new profile will still open the panel.
@@ -790,7 +786,7 @@ pref("browser.link.open_newwindow.override.external", -1);
 // 0: no restrictions - divert everything
 // 1: don't divert window.open at all
 // 2: don't divert window.open with features
-pref("browser.link.open_newwindow.restriction", 2);
+pref("browser.link.open_newwindow.restriction", 0);
 
 // If true, this pref causes windows opened by window.open to be forced into new
 // tabs (rather than potentially opening separate windows, depending on
@@ -805,7 +801,7 @@ pref("browser.link.open_newwindow.restriction", 2);
 
 // Tabbed browser
 pref("browser.tabs.closeTabByDblclick", false);
-pref("browser.tabs.closeWindowWithLastTab", true);
+pref("browser.tabs.closeWindowWithLastTab", false);
 pref("browser.tabs.allowTabDetach", true);
 // Open related links to a tab, e.g., link in current tab, at next to the
 // current tab if |insertRelatedAfterCurrent| is true.  Otherwise, always
@@ -868,8 +864,7 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 #endif
 
-pref("browser.tabs.firefox-view", true);
-pref("browser.tabs.firefox-view-next", false);
+pref("browser.tabs.firefox-view", false);
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 pref("browser.tabs.firefox-view.notify-for-tabs", false);
 
@@ -881,11 +876,7 @@ pref("security.allow_eval_in_parent_process", false);
 pref("security.allow_parent_unrestricted_js_loads", false);
 
 // Unload tabs when available memory is running low
-#if defined(XP_MACOSX) || defined(XP_WIN)
-    pref("browser.tabs.unloadOnLowMemory", true);
-#else
-    pref("browser.tabs.unloadOnLowMemory", false);
-#endif
+pref("browser.tabs.unloadOnLowMemory", true);
 
 // Tab Unloader does not unload tabs whose last inactive period is longer than
 // this value (in milliseconds).
@@ -1767,12 +1758,12 @@ pref("security.insecure_connection_icon.enabled", true);
 // Show degraded UI for http pages in private mode.
 pref("security.insecure_connection_icon.pbmode.enabled", true);
 
-// Show "Not Secure" text for http pages; disabled for now
-pref("security.insecure_connection_text.enabled", false);
-pref("security.insecure_connection_text.pbmode.enabled", false);
+// Show "Not Secure" text for http pages
+pref("security.insecure_connection_text.enabled", true);
+pref("security.insecure_connection_text.pbmode.enabled", true);
 
 // 1 = allow MITM for certificate pinning checks.
-pref("security.cert_pinning.enforcement_level", 1);
+pref("security.cert_pinning.enforcement_level", 2);
 
 
 // If this turns true, Moz*Gesture events are not called stopPropagation()
@@ -1905,7 +1896,7 @@ pref("privacy.trackingprotection.fingerprinting.enabled", true);
 // Enable cryptomining blocking by default for all channels, only on desktop.
 pref("privacy.trackingprotection.cryptomining.enabled", true);
 
-pref("browser.contentblocking.database.enabled", true);
+pref("browser.contentblocking.database.enabled", false);
 
 pref("dom.storage_access.frame_only", true);
 
@@ -1986,7 +1977,7 @@ pref("browser.contentblocking.customBlockList.preferences.ui.enabled", false);
 pref("browser.contentblocking.reportBreakage.url", "https://tracking-protection-issues.herokuapp.com/new");
 
 // Enable Protections report's Lockwise card by default.
-pref("browser.contentblocking.report.lockwise.enabled", true);
+pref("browser.contentblocking.report.lockwise.enabled", false);
 
 // Disable rotections report's Monitor card by default. The new Monitor API does
 // not support this feature as of now. See Bug 1815751.
@@ -1996,7 +1987,7 @@ pref("browser.contentblocking.report.monitor.enabled", false);
 pref("browser.contentblocking.report.proxy.enabled", false);
 
 // Disable the mobile promotion by default.
-pref("browser.contentblocking.report.show_mobile_app", true);
+pref("browser.contentblocking.report.show_mobile_app", false);
 
 // Locales in which Send to Device emails are supported
 // The most recent list of supported locales can be found at https://github.com/mozilla/bedrock/blob/6a08c876f65924651554decc57b849c00874b4e7/bedrock/settings/base.py#L963
@@ -2007,7 +1998,7 @@ pref("browser.send_to_device_locales", "de,en-GB,en-US,es-AR,es-CL,es-ES,es-MX,f
 pref("browser.vpn_promo.disallowed_regions", "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,tm,tr,ua");
 
 // Default to enabling VPN promo messages to be shown when specified and allowed
-pref("browser.vpn_promo.enabled", true);
+pref("browser.vpn_promo.enabled", false);
 // Only show vpn card to certain regions. Comma separated string of two letter ISO 3166-1 country codes.
 // The most recent list of supported countries can be found at https://support.mozilla.org/en-US/kb/mozilla-vpn-countries-available-subscribe
 // The full list of supported country codes can also be found at https://github.com/mozilla/bedrock/search?q=VPN_COUNTRY_CODES
@@ -2019,16 +2010,16 @@ pref("browser.contentblocking.report.vpn_regions", "as,at,be,ca,ch,de,es,fi,fr,g
 pref("browser.promo.focus.disallowed_regions", "cn");
 
 // Default to enabling focus promos to be shown where allowed.
-pref("browser.promo.focus.enabled", true);
+pref("browser.promo.focus.enabled", false);
 
 // Default to enabling pin promos to be shown where allowed.
-pref("browser.promo.pin.enabled", true);
+pref("browser.promo.pin.enabled", false);
 
 // Default to enabling cookie banner reduction promos to be shown where allowed.
 // Set to true for Fx113 (see bug 1808611)
 pref("browser.promo.cookiebanners.enabled", false);
 
-pref("browser.contentblocking.report.hide_vpn_banner", false);
+pref("browser.contentblocking.report.hide_vpn_banner", true);
 pref("browser.contentblocking.report.vpn_sub_id", "sub_HrfCZF7VPHzZkA");
 
 pref("browser.contentblocking.report.monitor.url", "https://monitor.firefox.com/?entrypoint=protection_report_monitor&utm_source=about-protections");
@@ -2054,7 +2045,7 @@ pref("browser.contentblocking.report.tracker.url", "https://support.mozilla.org/
 pref("browser.contentblocking.report.fingerprinter.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/fingerprinters-report");
 pref("browser.contentblocking.report.cryptominer.url", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/cryptominers-report");
 
-pref("browser.contentblocking.cfr-milestone.enabled", true);
+pref("browser.contentblocking.cfr-milestone.enabled", false);
 pref("browser.contentblocking.cfr-milestone.milestone-achieved", 0);
 // Milestones should always be in increasing order
 pref("browser.contentblocking.cfr-milestone.milestones", "[1000, 5000, 10000, 25000, 50000, 100000, 250000, 314159, 500000, 750000, 1000000, 1250000, 1500000, 1750000, 2000000, 2250000, 2500000, 8675309]");
@@ -2113,7 +2104,7 @@ pref("media.peerconnection.mtransport_process", true);
 
 // For speculatively warming up tabs to improve perceived
 // performance while using the async tab switcher.
-pref("browser.tabs.remote.warmup.enabled", true);
+pref("browser.tabs.remote.warmup.enabled", false);
 
 // Caches tab layers to improve perceived performance
 // of tab switches.
@@ -2161,11 +2152,7 @@ pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
 
-#ifdef FUZZING_SNAPSHOT
 pref("dom.ipc.processPrelaunch.enabled", false);
-#else
-pref("dom.ipc.processPrelaunch.enabled", true);
-#endif
 
 pref("browser.migrate.bookmarks-file.enabled", true);
 pref("browser.migrate.brave.enabled", true);
@@ -2306,18 +2293,14 @@ pref("doh-rollout.clearModeOnShutdown", false);
 // Normandy client preferences
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
 pref("app.normandy.dev_mode", false);
-pref("app.normandy.enabled", true);
+pref("app.normandy.enabled", false);
 pref("app.normandy.first_run", true);
 pref("app.normandy.logging.level", 50); // Warn
 pref("app.normandy.run_interval_seconds", 21600); // 6 hours
 pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/shield");
 pref("app.normandy.last_seen_buildid", "");
 pref("app.normandy.onsync_skew_sec", 600);
-#ifdef MOZ_DATA_REPORTING
-  pref("app.shield.optoutstudies.enabled", true);
-#else
-  pref("app.shield.optoutstudies.enabled", false);
-#endif
+pref("app.shield.optoutstudies.enabled", false);
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?

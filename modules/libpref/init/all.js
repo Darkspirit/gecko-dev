@@ -78,7 +78,7 @@ pref("general.useragent.compatMode.firefox", false);
 pref("general.config.obscure_value", 13); // for MCD .cfg files
 
 #ifndef MOZ_BUILD_APP_IS_BROWSER
-pref("general.warnOnAboutConfig", true);
+pref("general.warnOnAboutConfig", false);
 #endif
 
 // Whether middle button click with a modifier key starts to autoscroll or
@@ -199,7 +199,7 @@ pref("pdfjs.enableXfa", true);
 #endif
 
 // Disable support for MathML
-pref("mathml.disabled",    false);
+pref("mathml.disabled", false);
 
 // Enable scale transform for stretchy MathML operators. See bug 414277.
 pref("mathml.scale_stretchy_operators.enabled", true);
@@ -424,20 +424,12 @@ pref("gfx.downloadable_fonts.disable_cache", false);
   pref("gfx.font_rendering.directwrite.use_gdi_table_loading", true);
 #endif
 
-#if defined(XP_WIN)
-  // comma separated list of backends to use in order of preference
-  // e.g., pref("gfx.canvas.azure.backends", "direct2d,skia");
-  pref("gfx.canvas.azure.backends", "direct2d1.1,skia");
-#elif defined(XP_MACOSX)
-  pref("gfx.canvas.azure.backends", "skia");
-#else
-  pref("gfx.canvas.azure.backends", "skia");
-#endif
+pref("gfx.canvas.azure.backends", "skia");
 pref("gfx.content.azure.backends", "skia");
 
 #ifdef XP_WIN
   pref("gfx.webrender.flip-sequential", false);
-  pref("gfx.webrender.dcomp-win.enabled", true);
+  pref("gfx.webrender.dcomp-win.enabled", false);
   pref("gfx.webrender.triple-buffering.enabled", true);
 #endif
 
@@ -465,7 +457,7 @@ pref("gfx.webrender.debug.capture-profiler", false);
 pref("gfx.webrender.debug.profiler-ui", "Default");
 pref("gfx.webrender.debug.window-visibility", false);
 
-pref("gfx.webrender.multithreading", true);
+pref("gfx.webrender.multithreading", false);
 #ifdef XP_WIN
 pref("gfx.webrender.pbo-uploads", false);
 pref("gfx.webrender.batched-texture-uploads", true);
@@ -479,7 +471,7 @@ pref("gfx.webrender.draw-calls-for-texture-copy", false);
 
 pref("accessibility.warn_on_browsewithcaret", true);
 
-pref("accessibility.browsewithcaret_shortcut.enabled", true);
+pref("accessibility.browsewithcaret_shortcut.enabled", false);
 
 #ifndef XP_MACOSX
   // Tab focus model bit field:
@@ -572,7 +564,7 @@ pref("accessibility.typeaheadfind.enablesound", true);
   pref("accessibility.typeaheadfind.prefillwithselection", true);
 #endif
 pref("accessibility.typeaheadfind.matchesCountLimit", 1000);
-pref("findbar.highlightAll", false);
+pref("findbar.highlightAll", true);
 pref("findbar.entireword", false);
 pref("findbar.iteratorTimeout", 100);
 // matchdiacritics: controls the find bar's diacritic matching
@@ -1216,7 +1208,7 @@ pref("network.http.network-changed.timeout", 5);
 
 // The maximum number of current global half open sockets allowable
 // when starting a new speculative connection.
-pref("network.http.speculative-parallel-limit", 6);
+pref("network.http.speculative-parallel-limit", 0);
 
 // Whether or not to block requests for non head js/css items (e.g. media)
 // while those elements load.
@@ -1224,7 +1216,7 @@ pref("network.http.rendering-critical-requests-prioritization", true);
 
 // Disable IPv6 for backup connections to workaround problems about broken
 // IPv6 connectivity.
-pref("network.http.fast-fallback-to-IPv4", true);
+pref("network.http.fast-fallback-to-IPv4", false);
 
 // Http3 qpack table size.
 pref("network.http.http3.default-qpack-table-size", 65536); // 64k
@@ -1240,7 +1232,7 @@ pref("network.http.http3.alt-svc-mapping-for-testing", "");
 
 // alt-svc allows separation of transport routing from
 // the origin host without using a proxy.
-pref("network.http.altsvc.enabled", true);
+pref("network.http.altsvc.enabled", false);
 pref("network.http.altsvc.oe", false);
 
 // the origin extension impacts h2 coalescing
@@ -1412,7 +1404,7 @@ pref("network.dns.native-is-localhost", false);
 pref("network.dnsCacheExpirationGracePeriod", 60);
 
 // This preference can be used to turn off DNS prefetch.
-pref("network.dns.disablePrefetch", false);
+pref("network.dns.disablePrefetch", true);
 
 // This preference controls whether .onion hostnames are
 // rejected before being given to DNS. RFC 7686
@@ -1435,7 +1427,7 @@ pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
 
 // enables the prefetch service (i.e., prefetching of <link rel="next"> and
 // <link rel="prefetch"> URLs).
-pref("network.prefetch-next", true);
+pref("network.prefetch-next", false);
 
 // The following prefs pertain to the negotiate-auth extension (see bug 17578),
 // which provides transparent Kerberos or NTLM authentication using the SPNEGO
@@ -2691,7 +2683,6 @@ pref("font.size.monospace.x-math", 13);
   pref("browser.drag_out_of_frame_style", 1);
 
   // Middle-mouse handling
-  pref("middlemouse.paste", true);
   pref("middlemouse.openNewWindow", true);
   pref("middlemouse.scrollbarPosition", true);
 

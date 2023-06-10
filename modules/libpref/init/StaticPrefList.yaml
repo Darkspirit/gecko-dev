@@ -186,7 +186,7 @@
 
 - name: accessibility.accesskeycausesactivation
   type: bool
-  value: true
+  value: false
   mirror: always
 
 - name: accessibility.monoaudio.enable
@@ -872,7 +872,7 @@
 # Is support for Navigator.sendBeacon enabled?
 - name: beacon.enabled
   type: bool
-  value: true
+  value: false
   mirror: always
 
 #---------------------------------------------------------------------------
@@ -1343,7 +1343,7 @@
 # See bug 1747343
 - name: browser.download.always_ask_before_handling_new_types
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # See bug 1731668
@@ -1355,7 +1355,7 @@
 # See bug 1772569
 - name: browser.download.open_pdf_attachments_inline
   type: bool
-  value: false
+  value: true
   mirror: always
 
 - name: browser.download.sanitize_non_media_extensions
@@ -1872,11 +1872,7 @@
 # Clipboard behavior.
 - name: clipboard.autocopy
   type: bool
-#if !defined(ANDROID) && !defined(XP_MACOSX) && defined(XP_UNIX)
-  value: true
-#else
   value: false
-#endif
   mirror: always
 
 #ifdef XP_WIN
@@ -2852,7 +2848,7 @@
 #ifdef MOZ_ENABLE_FORKSERVER
 - name: dom.ipc.forkserver.enable
   type: bool
-  value: false
+  value: true
   mirror: once
 #endif
 
@@ -3700,7 +3696,7 @@
 # (some Firefox functionality requests, like OCSP will not be affected)
 - name: dom.security.https_only_mode
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If true, all content requests in Private Browsing Mode will get
@@ -3708,14 +3704,14 @@
 # to true then this pref has no effect)
 - name: dom.security.https_only_mode_pbm
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If true, sends http background request for top-level sites to
 # counter long timeouts.
 - name: dom.security.https_only_mode_send_http_background_request
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 # Time limit, in milliseconds, before sending the http background
@@ -3729,7 +3725,7 @@
 # to upgrad ethe connection, but the website tries to downgrade again.
 - name: dom.security.https_only_mode_break_upgrade_downgrade_endless_loop
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 # If true, when checking if it's upgrade downgrade cycles, the URI path will be
@@ -3758,7 +3754,7 @@
 # the pref dom.security.https_only_mode from above.
 - name: dom.security.https_only_mode_ever_enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # WARNING: Don't ever update that pref manually! It is only used
@@ -3766,14 +3762,14 @@
 # the pref dom.security.https_only_mode_pbm from above.
 - name: dom.security.https_only_mode_ever_enabled_pbm
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If true checks for secure www connections when https fails
 # and gives the user suggestions on the error page
 - name: dom.security.https_only_mode_error_page_user_suggestions
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If true, top-level request will get upgraded to HTTPS and
@@ -4601,7 +4597,7 @@
 # Is support for the Web GPU API enabled?
 - name: dom.webgpu.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # Are WebGPU indirect draws/dispatches enabled?
@@ -5120,7 +5116,7 @@
 # debugging
 - name: fission.processSiteNames
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # Allow showing of current profile along with process names, NOT
@@ -6240,7 +6236,7 @@
 # Whether to force using EGL over GLX.
 - name: gfx.x11-egl.force-enabled
   type: bool
-  value: false
+  value: true
   mirror: once
 
 - name: gfx.x11.glx_sgi_video_sync
@@ -6491,14 +6487,14 @@
 # Whether or not to fallback from WebRender to Software WebRender.
 - name: gfx.webrender.fallback.software
   type: bool
-  value: true
+  value: false
   mirror: once
 
 #ifdef XP_WIN
   # Whether to use an overlay of hardware decoded video with DirectComposition
 -   name: gfx.webrender.dcomp-video-hw-overlay-win
     type: bool
-    value: true
+    value: false
     mirror: once
   # Enable hardware decoded video overlay even when it is blocked.
 -   name: gfx.webrender.dcomp-video-hw-overlay-win-force-enabled
@@ -6522,7 +6518,7 @@
   # Whether to use an overlay of software decoded video with DirectComposition
 -   name: gfx.webrender.dcomp-video-sw-overlay-win
     type: bool
-    value: true
+    value: false
     mirror: once
   # Enable software decoded video overlay even when it is blocked.
 -   name: gfx.webrender.dcomp-video-sw-overlay-win-force-enabled
@@ -6591,7 +6587,7 @@
   # turning it on.
 - name: gfx.webrender.panic-on-gl-error
   type: bool
-  value: false
+  value: true
   mirror: once
 #endif
 
@@ -6689,7 +6685,7 @@
 # Whether to use the D3D11 RenderCompositor when using WebRender software backend
 - name: gfx.webrender.software.d3d11
   type: bool
-  value: true
+  value: false
   mirror: once
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -6708,7 +6704,7 @@
 # despite that
 - name: gfx.webrender.unaccelerated-widget.force
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Enable a lower quality, but higher performance pinch-zoom mode. Primarily
@@ -7323,20 +7319,20 @@
 
 - name: javascript.options.baselinejit
   type: bool
-  value: true
+  value: false
   mirror: always  # LoadStartupJSPrefs
   do_not_use_directly: true
 
 - name: javascript.options.ion
   type: bool
-  value: true
+  value: false
   mirror: always  # LoadStartupJSPrefs
   do_not_use_directly: true
 
 # The irregexp JIT for regex evaluation.
 - name: javascript.options.native_regexp
   type: bool
-  value: true
+  value: false
   mirror: always  # LoadStartupJSPrefs
   do_not_use_directly: true
 
@@ -7345,7 +7341,7 @@
 # compilations
 - name: javascript.options.jithints
   type: bool
-  value: true
+  value: false
   mirror: always  # LoadStartupJSPrefs
   do_not_use_directly: true
 
@@ -7759,7 +7755,7 @@
 # asm.js
 - name: javascript.options.asmjs
   type: bool
-  value: true
+  value: false
   mirror: always
 
 # Whether to throw a TypeError if asm.js code hits validation failure.
@@ -11221,7 +11217,7 @@
 #   2 - allow the cross-origin authentication as well.
 - name: network.auth.subresource-http-auth-allow
   type: uint32_t
-  value: 2
+  value: 0
   mirror: always
 
 # Sub-resources HTTP-authentication for cross-origin images:
@@ -11372,7 +11368,7 @@
 # If we should attempt to race the cache and network.
 - name: network.http.rcwn.enabled
   type: bool
-  value: true
+  value: false
   mirror: always
 
 - name: network.http.rcwn.cache_queue_normal_threshold
@@ -11591,7 +11587,7 @@
 # generate them from punycode.
 - name: network.IDN_show_punycode
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If set to true, IOService.offline depends on IOService.connectivity.
@@ -11609,7 +11605,7 @@
 # Enables the predictive service.
 - name: network.predictor.enabled
   type: bool
-  value: true
+  value: false
   mirror: always
 
 # Set true to allow resolving proxy for localhost
@@ -11640,7 +11636,7 @@
 
 - name: network.predictor.enable-prefetch
   type: bool
-  value: @IS_EARLY_BETA_OR_EARLIER@
+  value: false
   mirror: always
 
 - name: network.predictor.page-degradation.day
@@ -12409,7 +12405,7 @@
 # Enable HTTP/3
 - name: network.http.http3.enable
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 # Receive buffer size of QUIC socket
@@ -12425,7 +12421,7 @@
 
 - name: network.http.http3.enable_0rtt
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 # When a h3 transaction is inserted in the pending queue, the time (ms) we wait
@@ -12498,7 +12494,7 @@
 # Whether to use HTTPS RR as AltSvc
 - name: network.dns.use_https_rr_as_altsvc
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 # Whether to check for NAT64 using the system resolver
@@ -12519,13 +12515,13 @@
 # Whether to enable echconfig.
 - name: network.dns.echconfig.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # Whether to enable echconfig for http3.
 - name: network.dns.http3_echconfig.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # This pref needs to be worked together with network.dns.echconfig.enabled
@@ -12987,7 +12983,7 @@
 # First Party Isolation (double keying), disabled by default.
 - name: privacy.firstparty.isolate
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # If false, two windows in the same domain with different first party domains
@@ -13616,7 +13612,7 @@
 # Pref for mixed display content upgrading (images, audio, video).
 - name: security.mixed_content.upgrade_display_content
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether strict file origin policy is in effect. "False" is traditional.
@@ -14088,13 +14084,13 @@
 # Whether to apply ECH GREASE settings to HTTP3/QUIC connections
 - name: security.tls.ech.grease_http3
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # Whether to retry connections without ECH Grease
 - name: security.tls.ech.disable_grease_on_fallback
   type: RelaxedAtomicBool
-  value: @IS_NOT_NIGHTLY_BUILD@
+  value: false
   mirror: always
 
 # ECH GREASE Padding target (1-255)
@@ -14122,22 +14118,22 @@
 
 - name: security.tls.enable_0rtt_data
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl.treat_unsafe_negotiation_as_broken
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: security.ssl.require_safe_negotiation
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 - name: security.ssl.enable_false_start
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl.enable_alpn
@@ -14182,22 +14178,22 @@
 
 - name: security.ssl3.ecdhe_rsa_aes_128_sha
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.ecdhe_ecdsa_aes_128_sha
   type: RelaxedAtomicBool
-  value: @IS_NOT_EARLY_BETA_OR_EARLIER@
+  value: false
   mirror: always
 
 - name: security.ssl3.ecdhe_rsa_aes_256_sha
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.ecdhe_ecdsa_aes_256_sha
   type: RelaxedAtomicBool
-  value: @IS_NOT_EARLY_BETA_OR_EARLIER@
+  value: false
   mirror: always
 
 - name: security.ssl3.dhe_rsa_aes_128_sha
@@ -14212,32 +14208,32 @@
 
 - name: security.ssl3.rsa_aes_128_sha
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.rsa_aes_256_sha
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.rsa_aes_128_gcm_sha256
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.rsa_aes_256_gcm_sha384
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.ssl3.deprecated.rsa_des_ede3_sha
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.tls13.aes_128_gcm_sha256
   type: RelaxedAtomicBool
-  value: true
+  value: false
   mirror: always
 
 - name: security.tls13.chacha20_poly1305_sha256
@@ -15116,7 +15112,7 @@
 # Forces async present to wait for a sync, even while using remote textures.
 - name: webgl.out-of-process.async-present.force-sync
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 #if defined(MOZ_WIDGET_ANDROID)
@@ -15135,12 +15131,12 @@
 # Override the blocklist to assume that GL is not threadsafe.
 - name: webgl.threadsafe-gl.force-disabled
   type: bool
-  value: false
+  value: true
   mirror: once
 
 - name: webgl.use-canvas-render-thread
   type: bool
-  value: true
+  value: false
   mirror: once
 
 - name: webgl.override-unmasked-renderer
