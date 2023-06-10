@@ -2682,7 +2682,7 @@ void gfxPlatform::InitWebRenderConfig() {
 
   UpdateForceSubpixelAAWherePossible();
 
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
+#if defined(MOZ_WIDGET_ANDROID)
   if (StaticPrefs::gfx_webrender_software_opengl_AtStartup()) {
     gfxVars::SetAllowSoftwareWebRenderOGL(true);
   }
