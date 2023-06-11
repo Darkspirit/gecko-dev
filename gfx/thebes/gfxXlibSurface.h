@@ -11,7 +11,6 @@
 #include <X11/Xlib.h>
 #include "X11UndefineNone.h"
 
-#include "GLXLibrary.h"
 #include "mozilla/gfx/XlibDisplay.h"
 
 #include "nsSize.h"

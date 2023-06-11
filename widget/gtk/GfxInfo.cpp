@@ -954,18 +954,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_FAILURE_WEBRENDER_BUG_1673939",
         "https://gitlab.freedesktop.org/mesa/mesa/-/issues/3720");
 
-    // Bug 1635186 - Poor performance with video playing in a background window
-    // on XWayland. Keep in sync with FEATURE_X11_EGL below to only enable them
-    // together by default. Only Mesa and Nvidia binary drivers are expected
-    // on Wayland rigth now.
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::XWayland, DriverVendor::MesaAll, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_WEBRENDER,
-        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_LESS_THAN,
-        V(21, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_BUG_1635186",
-        "Mesa 21.0.0.0");
-
     // Bug 1815481 - Disable mesa drivers in virtual machines.
     APPEND_TO_DRIVER_BLOCKLIST_EXT(
         OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
@@ -981,37 +969,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
         nsIGfxInfo::FEATURE_BLOCKED_DEVICE, DRIVER_COMPARISON_IGNORED,
         V(0, 0, 0, 0), "FEATURE_FAILURE_WEBRENDER_COMPOSITOR_DISABLED", "");
-
-    ////////////////////////////////////
-    // FEATURE_X11_EGL
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::MesaAll, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_X11_EGL, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_LESS_THAN, V(17, 0, 0, 0), "FEATURE_X11_EGL_OLD_MESA",
-        "Mesa 17.0.0.0");
-
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::MesaAll, DeviceFamily::NvidiaAll,
-        nsIGfxInfo::FEATURE_X11_EGL, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_LESS_THAN, V(18, 2, 0, 0), "FEATURE_X11_EGL_OLD_MESA_NOUVEAU",
-        "Mesa 18.2.0.0");
-
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::NvidiaAll,
-        nsIGfxInfo::FEATURE_X11_EGL, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_LESS_THAN, V(470, 82, 0, 0),
-        "FEATURE_ROLLOUT_X11_EGL_NVIDIA_BINARY", "470.82.0");
-
-    // Disable on all AMD devices not using Mesa.
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::All, DriverVendor::NonMesaAll, DeviceFamily::AtiAll,
-        nsIGfxInfo::FEATURE_X11_EGL, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0),
-        "FEATURE_FAILURE_X11_EGL_NO_LINUX_ATI", "");
 
     ////////////////////////////////////
     // FEATURE_DMABUF

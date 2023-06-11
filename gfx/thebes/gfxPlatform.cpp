@@ -484,9 +484,7 @@ void gfxPlatform::InitChild(const ContentDeviceData& aData) {
 
 static void SwapIntervalPrefChangeCallback(const char* aPrefName, void*) {
   bool egl = Preferences::GetBool("gfx.swap-interval.egl", false);
-  bool glx = Preferences::GetBool("gfx.swap-interval.glx", false);
   gfxVars::SetSwapIntervalEGL(egl);
-  gfxVars::SetSwapIntervalGLX(glx);
 }
 
 static void WebRendeProfilerUIPrefChangeCallback(const char* aPrefName, void*) {

@@ -227,9 +227,6 @@ static const char* GetPrefNameForFeature(int32_t aFeature) {
     case nsIGfxInfo::FEATURE_WEBRENDER_OPTIMIZED_SHADERS:
       name = BLOCKLIST_PREF_BRANCH "webrender.optimized-shaders";
       break;
-    case nsIGfxInfo::FEATURE_X11_EGL:
-      name = BLOCKLIST_PREF_BRANCH "x11.egl";
-      break;
     case nsIGfxInfo::FEATURE_DMABUF:
       name = BLOCKLIST_PREF_BRANCH "dmabuf";
       break;
@@ -517,9 +514,6 @@ static int32_t BlocklistFeatureToGfxFeature(const nsAString& aFeature) {
   }
   if (aFeature.EqualsLiteral("THREADSAFE_GL")) {
     return nsIGfxInfo::FEATURE_THREADSAFE_GL;
-  }
-  if (aFeature.EqualsLiteral("X11_EGL")) {
-    return nsIGfxInfo::FEATURE_X11_EGL;
   }
   if (aFeature.EqualsLiteral("DMABUF")) {
     return nsIGfxInfo::FEATURE_DMABUF;

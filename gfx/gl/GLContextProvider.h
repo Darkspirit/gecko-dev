@@ -48,18 +48,6 @@ namespace gl {
 #include "GLContextProviderImpl.h"
 #undef GL_CONTEXT_PROVIDER_NAME
 
-#if defined(MOZ_WIDGET_GTK)
-#  ifdef MOZ_X11
-#    define GL_CONTEXT_PROVIDER_NAME GLContextProviderGLX
-#    include "GLContextProviderImpl.h"
-#    undef GL_CONTEXT_PROVIDER_NAME
-#  endif
-#  define GL_CONTEXT_PROVIDER_NAME GLContextProviderLinux
-#  include "GLContextProviderImpl.h"
-#  undef GL_CONTEXT_PROVIDER_NAME
-#  define GL_CONTEXT_PROVIDER_DEFAULT GLContextProviderLinux
-#endif
-
 #ifndef GL_CONTEXT_PROVIDER_DEFAULT
 #  define GL_CONTEXT_PROVIDER_DEFAULT GLContextProviderEGL
 #endif

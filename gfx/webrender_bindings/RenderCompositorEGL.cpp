@@ -38,9 +38,6 @@ extern LazyLogModule gRenderThreadLog;
 /* static */
 UniquePtr<RenderCompositor> RenderCompositorEGL::Create(
     const RefPtr<widget::CompositorWidget>& aWidget, nsACString& aError) {
-  if (kIsLinux && !gfx::gfxVars::UseEGL()) {
-    return nullptr;
-  }
   RefPtr<gl::GLContext> gl = RenderThread::Get()->SingletonGL(aError);
   if (!gl) {
     if (aError.IsEmpty()) {

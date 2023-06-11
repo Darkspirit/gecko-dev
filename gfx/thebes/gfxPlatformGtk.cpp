@@ -51,8 +51,6 @@
 #  include <X11/extensions/Xrandr.h>
 #  include "cairo-xlib.h"
 #  include "gfxXlibSurface.h"
-#  include "GLContextGLX.h"
-#  include "GLXLibrary.h"
 #  include "mozilla/X11Util.h"
 #  include "SoftwareVsyncSource.h"
 
@@ -90,15 +88,6 @@ static void screen_resolution_changed(GdkScreen* aScreen, GParamSpec* aPspec,
   sDPI = 0;
 }
 
-#if defined(MOZ_X11)
-// TODO(aosmond): The envvar is deprecated. We should remove it once EGL is the
-// default in release.
-static bool IsX11EGLEnvvarEnabled() {
-  const char* eglPref = PR_GetEnv("MOZ_X11_EGL");
-  return (eglPref && *eglPref);
-}
-#endif
-
 gfxPlatformGtk::gfxPlatformGtk() {
   if (!gfxPlatform::IsHeadless()) {
     gtk_init(nullptr, nullptr);
@@ -106,10 +95,6 @@ gfxPlatformGtk::gfxPlatformGtk() {
 
   mIsX11Display = gfxPlatform::IsHeadless() ? false : GdkIsX11Display();
   if (XRE_IsParentProcess()) {
-    InitX11EGLConfig();
-    if (IsWaylandDisplay() || gfxConfig::IsEnabled(Feature::X11_EGL)) {
-      gfxVars::SetUseEGL(true);
-    }
     InitDmabufConfig();
     if (gfxConfig::IsEnabled(Feature::DMABUF)) {
       gfxVars::SetUseDMABuf(true);
@@ -134,51 +119,6 @@ gfxPlatformGtk::~gfxPlatformGtk() {
   gPlatformFTLibrary = nullptr;
 }
 
-void gfxPlatformGtk::InitX11EGLConfig() {
-  FeatureState& feature = gfxConfig::GetFeature(Feature::X11_EGL);
-#ifdef MOZ_X11
-  feature.EnableByDefault();
-
-  if (StaticPrefs::gfx_x11_egl_force_enabled_AtStartup()) {
-    feature.UserForceEnable("Force enabled by pref");
-  } else if (IsX11EGLEnvvarEnabled()) {
-    feature.UserForceEnable("Force enabled by envvar");
-  } else if (StaticPrefs::gfx_x11_egl_force_disabled_AtStartup()) {
-    feature.UserDisable("Force disabled by pref",
-                        "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
-  }
-
-  nsCString failureId;
-  int32_t status;
-  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-  if (NS_FAILED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_X11_EGL,
-                                          failureId, &status))) {
-    feature.Disable(FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
-                    "FEATURE_FAILURE_NO_GFX_INFO"_ns);
-  } else if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
-    feature.Disable(FeatureStatus::Blocklisted, "Blocklisted by gfxInfo",
-                    failureId);
-  }
-
-  nsAutoString testType;
-  gfxInfo->GetTestType(testType);
-  // We can only use X11/EGL if we actually found the EGL library and
-  // successfully use it to determine system information in glxtest.
-  if (testType != u"EGL") {
-    feature.ForceDisable(FeatureStatus::Broken, "glxtest could not use EGL",
-                         "FEATURE_FAILURE_GLXTEST_NO_EGL"_ns);
-  }
-
-  if (feature.IsEnabled() && IsX11Display()) {
-    // Enabling glthread crashes on X11/EGL, see bug 1670545
-    PR_SetEnv("mesa_glthread=false");
-  }
-#else
-  feature.DisableByDefault(FeatureStatus::Unavailable, "X11 support missing",
-                           "FEATURE_FAILURE_NO_X11"_ns);
-#endif
-}
-
 void gfxPlatformGtk::InitDmabufConfig() {
   FeatureState& feature = gfxConfig::GetFeature(Feature::DMABUF);
   feature.EnableByDefault();
@@ -198,12 +138,6 @@ void gfxPlatformGtk::InitDmabufConfig() {
     feature.Disable(FeatureStatus::Blocklisted, "Blocklisted by gfxInfo",
                     failureId);
   }
-
-  if (!gfxVars::UseEGL()) {
-    feature.ForceDisable(FeatureStatus::Unavailable, "Requires EGL",
-                         "FEATURE_FAILURE_REQUIRES_EGL"_ns);
-  }
-
   if (feature.IsEnabled()) {
     nsAutoCString drmRenderDevice;
     gfxInfo->GetDrmRenderDevice(drmRenderDevice);
@@ -241,10 +175,6 @@ bool gfxPlatformGtk::InitVAAPIConfig(bool aForceEnabledByUser) {
   }
   if (aForceEnabledByUser) {
     feature.UserForceEnable("Force enabled by pref");
-  }
-  if (!gfxVars::UseEGL()) {
-    feature.ForceDisable(FeatureStatus::Unavailable, "Requires EGL",
-                         "FEATURE_FAILURE_REQUIRES_EGL"_ns);
   }
 
   // Configure zero-copy playback feature.

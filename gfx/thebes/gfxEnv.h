@@ -116,9 +116,6 @@ class gfxEnv final {
   // Very noisy GLContext and GLContextProviderEGL
   DECL_GFX_ENV(MOZ_GL_SPEW)
 
-  // Do extra work before and after each GLX call in GLContextProviderGLX
-  DECL_GFX_ENV(MOZ_GLX_DEBUG)
-
   // GL compositing on Windows
   DECL_GFX_ENV(MOZ_LAYERS_PREFER_EGL)
 

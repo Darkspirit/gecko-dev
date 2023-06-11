@@ -6204,11 +6204,6 @@
   mirror: always
 
 # SwapInterval
-- name: gfx.swap-interval.glx
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 - name: gfx.swap-interval.egl
   type: RelaxedAtomicBool
   mirror: always
@@ -6225,25 +6220,6 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
-
-#ifdef MOZ_X11
-# Whether to force using GLX over EGL.
-- name: gfx.x11-egl.force-disabled
-  type: bool
-  value: false
-  mirror: once
-
-# Whether to force using EGL over GLX.
-- name: gfx.x11-egl.force-enabled
-  type: bool
-  value: true
-  mirror: once
-
-- name: gfx.x11.glx_sgi_video_sync
-  type: bool
-  value: false
-  mirror: once
-#endif
 
 - name: gfx.testing.device-fail
   type: RelaxedAtomicBool

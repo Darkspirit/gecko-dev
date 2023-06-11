@@ -52,46 +52,12 @@
 
 #include "mozilla/GfxInfoUtils.h"
 
-#ifdef MOZ_X11
-// stuff from glx.h
-typedef struct __GLXcontextRec* GLXContext;
-typedef XID GLXPixmap;
-typedef XID GLXDrawable;
-/* GLX 1.3 and later */
-typedef struct __GLXFBConfigRec* GLXFBConfig;
-typedef XID GLXFBConfigID;
-typedef XID GLXContextID;
-typedef XID GLXWindow;
-typedef XID GLXPbuffer;
-#  define GLX_RGBA 4
-#  define GLX_RED_SIZE 8
-#  define GLX_GREEN_SIZE 9
-#  define GLX_BLUE_SIZE 10
-#  define GLX_DOUBLEBUFFER 5
-#endif
-
 // stuff from gl.h
 typedef uint8_t GLubyte;
 typedef uint32_t GLenum;
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02
-
-// GLX_MESA_query_renderer
-// clang-format off
-#define GLX_RENDERER_VENDOR_ID_MESA                            0x8183
-#define GLX_RENDERER_DEVICE_ID_MESA                            0x8184
-#define GLX_RENDERER_VERSION_MESA                              0x8185
-#define GLX_RENDERER_ACCELERATED_MESA                          0x8186
-#define GLX_RENDERER_VIDEO_MEMORY_MESA                         0x8187
-#define GLX_RENDERER_UNIFIED_MEMORY_ARCHITECTURE_MESA          0x8188
-#define GLX_RENDERER_PREFERRED_PROFILE_MESA                    0x8189
-#define GLX_RENDERER_OPENGL_CORE_PROFILE_VERSION_MESA          0x818A
-#define GLX_RENDERER_OPENGL_COMPATIBILITY_PROFILE_VERSION_MESA 0x818B
-#define GLX_RENDERER_OPENGL_ES_PROFILE_VERSION_MESA            0x818C
-#define GLX_RENDERER_OPENGL_ES2_PROFILE_VERSION_MESA           0x818D
-#define GLX_RENDERER_ID_MESA                                   0x818E
-// clang-format on
 
 // stuff from egl.h
 typedef intptr_t EGLAttrib;
@@ -668,197 +634,6 @@ static void get_xrandr_info(Display* dpy) {
   log("GLX_TEST: get_xrandr_info finished\n");
 }
 
-void glxtest() {
-  log("GLX_TEST: glxtest start\n");
-
-  Display* dpy = nullptr;
-  void* libgl = dlopen(LIBGL_FILENAME, RTLD_LAZY);
-  if (!libgl) {
-    record_error(LIBGL_FILENAME " missing");
-    return;
-  }
-  auto release = mozilla::MakeScopeExit([&] {
-    if (dpy) {
-#  ifdef MOZ_ASAN
-      XCloseDisplay(dpy);
-#  else
-      // This XSync call wanted to be instead:
-      //   XCloseDisplay(dpy);
-      // but this can cause 1-minute stalls on certain setups using Nouveau, see
-      // bug 973192
-      XSync(dpy, False);
-#  endif
-    }
-    dlclose(libgl);
-  });
-
-  typedef void* (*PFNGLXGETPROCADDRESS)(const char*);
-  PFNGLXGETPROCADDRESS glXGetProcAddress =
-      cast<PFNGLXGETPROCADDRESS>(dlsym(libgl, "glXGetProcAddress"));
-
-  if (!glXGetProcAddress) {
-    record_error("no glXGetProcAddress");
-    return;
-  }
-
-  typedef GLXFBConfig* (*PFNGLXQUERYEXTENSION)(Display*, int*, int*);
-  PFNGLXQUERYEXTENSION glXQueryExtension =
-      cast<PFNGLXQUERYEXTENSION>(glXGetProcAddress("glXQueryExtension"));
-
-  typedef GLXFBConfig* (*PFNGLXQUERYVERSION)(Display*, int*, int*);
-  PFNGLXQUERYVERSION glXQueryVersion =
-      cast<PFNGLXQUERYVERSION>(dlsym(libgl, "glXQueryVersion"));
-
-  typedef XVisualInfo* (*PFNGLXCHOOSEVISUAL)(Display*, int, int*);
-  PFNGLXCHOOSEVISUAL glXChooseVisual =
-      cast<PFNGLXCHOOSEVISUAL>(glXGetProcAddress("glXChooseVisual"));
-
-  typedef GLXContext (*PFNGLXCREATECONTEXT)(Display*, XVisualInfo*, GLXContext,
-                                            Bool);
-  PFNGLXCREATECONTEXT glXCreateContext =
-      cast<PFNGLXCREATECONTEXT>(glXGetProcAddress("glXCreateContext"));
-
-  typedef Bool (*PFNGLXMAKECURRENT)(Display*, GLXDrawable, GLXContext);
-  PFNGLXMAKECURRENT glXMakeCurrent =
-      cast<PFNGLXMAKECURRENT>(glXGetProcAddress("glXMakeCurrent"));
-
-  typedef void (*PFNGLXDESTROYCONTEXT)(Display*, GLXContext);
-  PFNGLXDESTROYCONTEXT glXDestroyContext =
-      cast<PFNGLXDESTROYCONTEXT>(glXGetProcAddress("glXDestroyContext"));
-
-  typedef GLubyte* (*PFNGLGETSTRING)(GLenum);
-  PFNGLGETSTRING glGetString =
-      cast<PFNGLGETSTRING>(glXGetProcAddress("glGetString"));
-
-  if (!glXQueryExtension || !glXQueryVersion || !glXChooseVisual ||
-      !glXCreateContext || !glXMakeCurrent || !glXDestroyContext ||
-      !glGetString) {
-    record_error(LIBGL_FILENAME " missing methods");
-    return;
-  }
-
-  ///// Open a connection to the X server /////
-  dpy = XOpenDisplay(nullptr);
-  if (!dpy) {
-    record_error("Unable to open a connection to the X server");
-    return;
-  }
-
-  ///// Check that the GLX extension is present /////
-  if (!glXQueryExtension(dpy, nullptr, nullptr)) {
-    record_error("GLX extension missing");
-    return;
-  }
-
-  XSetErrorHandler(x_error_handler);
-
-  ///// Get a visual /////
-  int attribs[] = {GLX_RGBA, GLX_RED_SIZE,  1, GLX_GREEN_SIZE,
-                   1,        GLX_BLUE_SIZE, 1, None};
-  XVisualInfo* vInfo = glXChooseVisual(dpy, DefaultScreen(dpy), attribs);
-  if (!vInfo) {
-    int attribs2[] = {GLX_RGBA, GLX_RED_SIZE,  1, GLX_GREEN_SIZE,
-                      1,        GLX_BLUE_SIZE, 1, GLX_DOUBLEBUFFER,
-                      None};
-    vInfo = glXChooseVisual(dpy, DefaultScreen(dpy), attribs2);
-    if (!vInfo) {
-      record_error("No visuals found");
-      return;
-    }
-  }
-
-  // using a X11 Window instead of a GLXPixmap does not crash
-  // fglrx in indirect rendering. bug 680644
-  Window window;
-  XSetWindowAttributes swa;
-  swa.colormap = XCreateColormap(dpy, RootWindow(dpy, vInfo->screen),
-                                 vInfo->visual, AllocNone);
-
-  swa.border_pixel = 0;
-  window = XCreateWindow(dpy, RootWindow(dpy, vInfo->screen), 0, 0, 16, 16, 0,
-                         vInfo->depth, InputOutput, vInfo->visual,
-                         CWBorderPixel | CWColormap, &swa);
-
-  ///// Get a GL context and make it current //////
-  GLXContext context = glXCreateContext(dpy, vInfo, nullptr, True);
-  glXMakeCurrent(dpy, window, context);
-
-  ///// Look for this symbol to determine texture_from_pixmap support /////
-  void* glXBindTexImageEXT = glXGetProcAddress("glXBindTexImageEXT");
-
-  ///// Get GL vendor/renderer/versions strings /////
-  const GLubyte* versionString = glGetString(GL_VERSION);
-  const GLubyte* vendorString = glGetString(GL_VENDOR);
-  const GLubyte* rendererString = glGetString(GL_RENDERER);
-
-  if (versionString && vendorString && rendererString) {
-    record_value("VENDOR\n%s\nRENDERER\n%s\nVERSION\n%s\nTFP\n%s\n",
-                 vendorString, rendererString, versionString,
-                 glXBindTexImageEXT ? "TRUE" : "FALSE");
-  } else {
-    record_error("glGetString returned null");
-  }
-
-  // If GLX_MESA_query_renderer is available, populate additional data.
-  typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)(
-      int attribute, unsigned int* value);
-  PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC
-  glXQueryCurrentRendererIntegerMESAProc =
-      cast<PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC>(
-          glXGetProcAddress("glXQueryCurrentRendererIntegerMESA"));
-  if (glXQueryCurrentRendererIntegerMESAProc) {
-    unsigned int vendorId, deviceId, accelerated, videoMemoryMB;
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VENDOR_ID_MESA,
-                                           &vendorId);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_DEVICE_ID_MESA,
-                                           &deviceId);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_ACCELERATED_MESA,
-                                           &accelerated);
-    glXQueryCurrentRendererIntegerMESAProc(GLX_RENDERER_VIDEO_MEMORY_MESA,
-                                           &videoMemoryMB);
-
-    // Truncate IDs to 4 digits- that's all PCI IDs are.
-    vendorId &= 0xFFFF;
-    deviceId &= 0xFFFF;
-
-    record_value(
-        "MESA_VENDOR_ID\n0x%04x\n"
-        "MESA_DEVICE_ID\n0x%04x\n"
-        "MESA_ACCELERATED\n%s\n"
-        "MESA_VRAM\n%dMB\n",
-        vendorId, deviceId, accelerated ? "TRUE" : "FALSE", videoMemoryMB);
-  }
-
-  // From Mesa's GL/internal/dri_interface.h, to be used by DRI clients.
-  typedef const char* (*PFNGLXGETSCREENDRIVERPROC)(Display* dpy, int scrNum);
-  PFNGLXGETSCREENDRIVERPROC glXGetScreenDriverProc =
-      cast<PFNGLXGETSCREENDRIVERPROC>(glXGetProcAddress("glXGetScreenDriver"));
-  if (glXGetScreenDriverProc) {
-    const char* driDriver = glXGetScreenDriverProc(dpy, DefaultScreen(dpy));
-    if (driDriver) {
-      record_value("DRI_DRIVER\n%s\n", driDriver);
-    }
-  }
-
-  // Get monitor and DDX driver information
-  get_xrandr_info(dpy);
-
-  ///// Clean up. Indeed, the parent process might fail to kill us (e.g. if it
-  ///// doesn't need to check GL info) so we might be staying alive for longer
-  ///// than expected, so it's important to consume as little memory as
-  ///// possible. Also we want to check that we're able to do that too without
-  ///// generating X errors.
-  glXMakeCurrent(dpy, None,
-                 nullptr);  // must release the GL context before destroying it
-  glXDestroyContext(dpy, context);
-  XDestroyWindow(dpy, window);
-  XFreeColormap(dpy, swa.colormap);
-  XFree(vInfo);
-
-  record_value("TEST_TYPE\nGLX\n");
-  log("GLX_TEST: glxtest finished\n");
-}
-
 bool x11_egltest() {
   log("GLX_TEST: x11_egltest start\n");
 
@@ -956,9 +731,7 @@ int childgltest(bool aWayland) {
 #ifdef MOZ_X11
   if (!aWayland) {
     // TODO: --display command line argument is not properly handled
-    if (!x11_egltest()) {
-      glxtest();
-    }
+    x11_egltest();
   }
 #endif
   // Finally write buffered data to the pipe.

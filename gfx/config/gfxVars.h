@@ -62,7 +62,6 @@ class gfxVarReceiver;
   _(GREDirectory, nsString, nsString())                            \
   _(ProfDirectory, nsString, nsString())                           \
   _(AllowD3D11KeyedMutex, bool, false)                             \
-  _(SwapIntervalGLX, bool, false)                                  \
   _(SwapIntervalEGL, bool, false)                                  \
   _(SystemTextQuality, int32_t, 5 /* CLEARTYPE_QUALITY */)         \
   _(SystemTextClearTypeLevel, float, 1.0f)                         \
@@ -78,7 +77,6 @@ class gfxVarReceiver;
   _(ForceSubpixelAAWherePossible, bool, false)                     \
   _(FxREmbedded, bool, false)                                      \
   _(UseAHardwareBufferSharedSurfaceWebglOop, bool, false)          \
-  _(UseEGL, bool, false)                                           \
   _(DrmRenderDevice, nsCString, nsCString())                       \
   _(UseDMABuf, bool, false)                                        \
   _(DMABufModifiersXRGB, ArrayOfuint64_t, nsTArray<uint64_t>())    \

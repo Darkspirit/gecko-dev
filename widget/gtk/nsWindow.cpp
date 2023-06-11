@@ -32,7 +32,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/HelpersCairo.h"
 #include "mozilla/layers/APZThreadUtils.h"
@@ -113,7 +112,6 @@
 #  include <X11/extensions/XShm.h>
 #  include <X11/extensions/shape.h>
 #  include "gfxXlibSurface.h"
-#  include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
 #  include "GLContextEGL.h"  // for GLContextEGL::FindVisual()
 #  include "WindowSurfaceX11Image.h"
 #  include "WindowSurfaceX11SHM.h"
@@ -130,7 +128,6 @@ using namespace mozilla::layers;
 using namespace mozilla::widget;
 #ifdef MOZ_X11
 using mozilla::gl::GLContextEGL;
-using mozilla::gl::GLContextGLX;
 #endif
 
 // Don't put more than this many rects in the dirty region, just fluff
@@ -5592,18 +5589,7 @@ bool nsWindow::ConfigureX11GLVisual() {
   auto* screen = gtk_widget_get_screen(mShell);
   int visualId = 0;
   bool haveVisual = false;
-
-  if (gfxVars::UseEGL()) {
-    haveVisual = GLContextEGL::FindVisual(&visualId);
-  }
-
-  // We are on GLX or use it as a fallback on Mesa, see
-  // https://gitlab.freedesktop.org/mesa/mesa/-/issues/149
-  if (!haveVisual) {
-    auto* display = GDK_DISPLAY_XDISPLAY(gtk_widget_get_display(mShell));
-    int screenNumber = GDK_SCREEN_XNUMBER(screen);
-    haveVisual = GLContextGLX::FindVisual(display, screenNumber, &visualId);
-  }
+  haveVisual = GLContextEGL::FindVisual(&visualId);
 
   GdkVisual* gdkVisual = nullptr;
   if (haveVisual) {

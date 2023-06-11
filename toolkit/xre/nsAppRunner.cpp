@@ -4714,6 +4714,12 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
 
     bool waylandEnabled = IsWaylandEnabled();
+#ifdef MOZ_X11
+    if (!waylandEnabled) {
+      // Enabling glthread crashes on X11/EGL, see bug 1670545
+      PR_SetEnv("mesa_glthread=false");
+    }
+#endif
     // On Wayland disabled builds read X11 DISPLAY env exclusively
     // and don't care about different displays.
     if (!waylandEnabled && !display_name) {

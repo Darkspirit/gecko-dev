@@ -51,11 +51,8 @@ extern "C" const char* __tsan_default_suppressions() {
          // However, they can be unloaded by GTK early which we cannot avoid.
          "mutex:libGL.so\n"
          "mutex:libGLdispatch\n"
-         "mutex:libGLX\n"
          // Bug 1637707 - permanent
          "mutex:libEGL_mesa.so\n"
-         // ~GLContextGLX unlocks a libGL mutex.
-         "mutex:GLContextGLX::~GLContextGLX\n"
          // Bug 1825171
          "mutex:libffi.so\n"
          "mutex:wl_registry_destroy\n"

@@ -159,34 +159,32 @@ interface nsIGfxInfo : nsISupports
   const long FEATURE_THREADSAFE_GL = 31;
   /* Whether webrender uses pre-optimized shaders, starting in 87. */
   const long FEATURE_WEBRENDER_OPTIMIZED_SHADERS = 32;
-  /* Whether we prefer EGL over GLX with X11, starting in 88. */
-  const long FEATURE_X11_EGL = 33;
   /* Whether DMABUF is supported, starting in 88. */
-  const long FEATURE_DMABUF = 34;
+  const long FEATURE_DMABUF = 33;
   /* Whether webrender caches shader program binaries to disk, starting in 89. */
-  const long FEATURE_WEBRENDER_SHADER_CACHE = 35;
+  const long FEATURE_WEBRENDER_SHADER_CACHE = 34;
   /* Whether partial present is allowed with WebRender, starting in 98. */
-  const long FEATURE_WEBRENDER_PARTIAL_PRESENT = 36;
+  const long FEATURE_WEBRENDER_PARTIAL_PRESENT = 35;
   /* Whether WebGPU is supported, starting in 100. */
-  const long FEATURE_WEBGPU = 37;
+  const long FEATURE_WEBGPU = 36;
   /* Whether video overlay of hardware decoded video is supported, starting in 100. */
-  const long FEATURE_VIDEO_OVERLAY = 38;
+  const long FEATURE_VIDEO_OVERLAY = 37;
   /* Whether hardware decoded video zero copy is supported, starting in 101. */
-  const long FEATURE_HW_DECODED_VIDEO_ZERO_COPY = 39;
+  const long FEATURE_HW_DECODED_VIDEO_ZERO_COPY = 38;
   /* Whether DMABUF export is supported, starting in 103. */
-  const long FEATURE_DMABUF_SURFACE_EXPORT = 40;
+  const long FEATURE_DMABUF_SURFACE_EXPORT = 39;
   /* Whether reuse decoder device is supported, starting in 104. */
-  const long FEATURE_REUSE_DECODER_DEVICE = 41;
+  const long FEATURE_REUSE_DECODER_DEVICE = 40;
   /* Whether to allow backdrop filter, starting in 105. */
-  const long FEATURE_BACKDROP_FILTER = 42;
+  const long FEATURE_BACKDROP_FILTER = 41;
   /* Whether to use Accelerated Canvas2D, starting in 110. */
-  const long FEATURE_ACCELERATED_CANVAS2D = 43;
+  const long FEATURE_ACCELERATED_CANVAS2D = 42;
   /* Whether hardware H264 decoding is supported, starting in 114; not for downloadable blocking. */
-  const long FEATURE_H264_HW_DECODE = 44;
+  const long FEATURE_H264_HW_DECODE = 43;
   /* Whether hardware AV1 decoding is supported, starting in 114; not for downloadable blocking. */
-  const long FEATURE_AV1_HW_DECODE = 45;
+  const long FEATURE_AV1_HW_DECODE = 44;
   /* Whether video overlay of software decoded video is supported, starting in 116. */
-  const long FEATURE_VIDEO_SOFTWARE_OVERLAY = 46;
+  const long FEATURE_VIDEO_SOFTWARE_OVERLAY = 45;
   /* the maximum feature value. */
   const long FEATURE_MAX_VALUE = FEATURE_VIDEO_SOFTWARE_OVERLAY;
 
