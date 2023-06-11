@@ -13,8 +13,8 @@
 #include "nsImageToPixbuf.h"
 #include "nsIStringBundle.h"
 #include "nsIObserverService.h"
+#include "nsIXULAppInfo.h"
 #include "nsCRT.h"
-#include "mozilla/XREAppData.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -23,7 +23,6 @@
 #include <gdk/gdk.h>
 
 using namespace mozilla;
-extern const StaticXREAppData* gAppData;
 
 static bool gHasActions = false;
 static bool gHasCaps = false;
@@ -181,18 +180,16 @@ nsresult nsAlertsIconListener::ShowAlert(GdkPixbuf* aPixbuf) {
     notify_notification_set_hint(mNotification, "suppress-sound",
                                  g_variant_new_boolean(mAlertIsSilent));
 
-    // If MOZ_DESKTOP_FILE_NAME variable is set, use it as the application id,
-    // otherwise use gAppData->name
-    if (getenv("MOZ_DESKTOP_FILE_NAME")) {
-      // Send the desktop name to identify the application
-      // The desktop-entry is the part before the .desktop
-      notify_notification_set_hint(
-          mNotification, "desktop-entry",
-          g_variant_new("s", getenv("MOZ_DESKTOP_FILE_NAME")));
-    } else {
-      notify_notification_set_hint(mNotification, "desktop-entry",
-                                   g_variant_new("s", gAppData->remotingName));
-    }
+    nsresult rv;
+    nsCOMPtr<nsIXULAppInfo> appInfo =
+        do_GetService("@mozilla.org/xre/app-info;1", &rv);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    nsAutoCString desktopEntryName;
+    rv = appInfo->GetDesktopEntryName(desktopEntryName);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    notify_notification_set_hint(mNotification, "desktop-entry",
+                                 g_variant_new("s", desktopEntryName.get()));
   }
 
   // Fedora 10 calls NotifyNotification "closed" signal handlers with a

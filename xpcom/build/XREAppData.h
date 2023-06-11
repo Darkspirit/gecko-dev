@@ -189,6 +189,7 @@ class XREAppData {
   // Returns a name suitable for DBUS services.
   static void SanitizeNameForDBus(nsACString&);
   void GetDBusAppName(nsACString&) const;
+  void GetDBusObjectPath(nsACString&) const;
 };
 
 /**

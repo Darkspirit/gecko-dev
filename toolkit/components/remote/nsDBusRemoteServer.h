@@ -15,7 +15,7 @@
 class nsDBusRemoteServer final : public nsRemoteServer,
                                  public nsUnixRemoteServer {
  public:
-  nsDBusRemoteServer() : mConnection(nullptr), mAppName(nullptr) {}
+  nsDBusRemoteServer() : mConnection(nullptr), mDBusAppName(nullptr) {}
   ~nsDBusRemoteServer() override { Shutdown(); }
 
   nsresult Startup(const char* aAppName, const char* aProfileName) override;
@@ -31,8 +31,8 @@ class nsDBusRemoteServer final : public nsRemoteServer,
 
   // The connection is owned by DBus library
   RefPtr<DBusConnection> mConnection;
-  nsCString mAppName;
-  nsCString mPathName;
+  nsCString mDBusAppName;
+  nsCString mDBusObjectPath;
 };
 
 #endif  // __nsDBusRemoteServer_h__

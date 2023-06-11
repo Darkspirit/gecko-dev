@@ -326,6 +326,7 @@ nsString gProcessStartupShortcut;
 #endif
 
 #if defined(MOZ_WIDGET_GTK)
+nsCString gDesktopEntryName;
 #  include <glib.h>
 #  include "mozilla/WidgetUtilsGtk.h"
 #  include <gtk/gtk.h>
@@ -438,7 +439,6 @@ bool IsWaylandEnabled() {
         return true;
       }
     }
-#  ifdef EARLY_BETA_OR_EARLIER
     // Enable by default when we're running on a recent enough GTK version. We'd
     // like to check further details like compositor version and so on ideally
     // to make sure we don't enable it on old Mutter or what not, but we can't,
@@ -450,9 +450,6 @@ bool IsWaylandEnabled() {
     // GNOME / KDE  / known-good-desktop environments by checking
     // XDG_CURRENT_DESKTOP or so...
     return !gtk_check_version(3, 24, 30);
-#  else
-    return false;
-#  endif
   }();
   return isWaylandEnabled;
 }
@@ -1607,9 +1604,42 @@ nsXULAppInfo::GetPrefersReducedMotion(bool* aResult) {
 }
 
 NS_IMETHODIMP
+nsXULAppInfo::GetDBusAppName(nsACString& aDBusAppName) {
+#ifdef MOZ_WIDGET_GTK
+  if (XRE_IsParentProcess()) {
+    gAppData->GetDBusAppName(aDBusAppName);
+    return NS_OK;
+  }
+#endif
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetDBusObjectPath(nsACString& aDBusObjectPath) {
+#ifdef MOZ_WIDGET_GTK
+  if (XRE_IsParentProcess()) {
+    gAppData->GetDBusObjectPath(aDBusObjectPath);
+    return NS_OK;
+  }
+#endif
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
 nsXULAppInfo::GetDrawInTitlebar(bool* aResult) {
   *aResult = LookAndFeel::DrawInTitlebar();
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsXULAppInfo::GetDesktopEntryName(nsACString& aDesktopEntryName) {
+#ifdef MOZ_WIDGET_GTK
+  if (XRE_IsParentProcess() && !gDesktopEntryName.IsEmpty()) {
+    aDesktopEntryName.Assign(gDesktopEntryName);
+    return NS_OK;
+  }
+#endif
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
@@ -4634,8 +4664,64 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   // has been initialized to make sure everything is running
   // consistently.
 
-  // Set program name to the one defined in application.ini.
-  g_set_prgname(gAppData->remotingName);
+  // App ID (g_set_prgname()) must match the .desktop file name (DesktopId)
+  // to have correct window icons and window grouping on Wayland.
+  // X11 Apps can set their icon themselves, they are grouped by
+  // gdk_set_program_class(MOZ_APP_REMOTINGNAME) in widget/gtk/nsAppShell.cpp
+  // and StartupWMClass=MOZ_APP_REMOTINGNAME in the .desktop file.
+  // gdk_set_program_class can be overridden by --class argument.
+
+  // App ID must match the .desktop file name (DesktopId) to have
+  // correct window icons and window grouping on Wayland.
+  // g_set_prgname can be overridden by --name argument.
+  // https://honk.sigxcpu.org/con/GTK__and_the_application_id.html
+  // https://docs.gtk.org/gio/type_func.Application.id_is_valid.html
+  // https://docs.gtk.org/glib/func.set_prgname.html
+  // https://docs.gtk.org/gtk3/running.html#common-commandline-options
+  // Gtk4:
+  // https://gitlab.gnome.org/GNOME/gtk/-/issues/2822
+  // https://docs.gtk.org/gio/method.Application.set_application_id.html
+  // https://docs.gtk.org/gtk4/migrating-3to4.html#set-a-proper-application-id
+  // Gtk4 would not be fully compatible to Snap's desktop file names,
+  // g_set_prgname would need to stay unless Snaps and custom desktop files
+  // are named org.vendor.appname[.optionalalias].desktop.
+  // Gtk4 wants g_application_id == D-Bus service name == .desktop file name == xdg app_id
+  // but we have to have:
+  // D-Bus service name: org.vendor.app.Servicename or org.vendor.app.profile.Servicename
+  // xdg app_id + desktop file: dbus name for Flatpak, package+alias_app for Snap, remotingname for rest.
+  // X11:
+  // X11 Apps can set their icon themselves, they are grouped by
+  // gdk_set_program_class(MOZ_APP_REMOTINGNAME) in widget/gtk/nsAppShell.cpp
+  // and StartupWMClass=MOZ_APP_REMOTINGNAME in the .desktop file.
+  // gdk_set_program_class can be overridden by --class argument.
+  // https://docs.gtk.org/gdk3/func.set_program_class.html
+  const char* snapName = PR_GetEnv("SNAP_NAME");
+  const char* desktopEntryNameFromArg = nullptr;
+  if (ARG_FOUND == CheckArg("name", &desktopEntryNameFromArg)) {
+    gDesktopEntryName.Assign(desktopEntryNameFromArg);
+  } else if (mozilla::widget::IsRunningUnderFlatpak()) {
+    nsAutoCString desktopEntryName;
+    gAppData->GetDBusAppName(desktopEntryName);
+    gDesktopEntryName.Assign(desktopEntryName);
+  } else if (snapName && (strcmp(snapName, MOZ_APP_NAME) == 0)) {
+    if (const char* snapInstanceKey = PR_GetEnv("SNAP_INSTANCE_KEY")) {
+      // snap parallel instance .desktop file name:
+      // SNAP_INSTANCE_NAME would have the format of `snap run packagename_maybealias`,
+      // but we need to match packagename+alias_appname.desktop.
+      // There is no env var that contains the appname,
+      // but appname is usually the same as packagename. Both are defined in snapcraft.yaml.
+      // https://snapcraft.io/docs/environment-variables#heading--snap-name
+      // https://snapcraft.io/docs/environment-variables#heading--snap-instance-key
+      gDesktopEntryName.Assign(nsPrintfCString("%s+%s_%s", snapName, snapInstanceKey, snapName).get());
+    } else {
+      // snap default .desktop file name:
+      gDesktopEntryName.Assign(nsPrintfCString("%s_%s", snapName, snapName).get());
+    }
+  } else {
+    // default .desktop file name
+    gDesktopEntryName.Assign(gAppData->remotingName);
+  }
+  g_set_prgname(gDesktopEntryName.get());
 
   // Initialize GTK here for splash.
 
@@ -4776,6 +4862,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 #endif
 #if defined(MOZ_WIDGET_GTK)
+  // Set the localized application name.
+  // Used for error messages or the task list.
+  // https://docs.gtk.org/glib/func.set_application_name.html
   g_set_application_name(mAppData->name);
 
 #endif /* defined(MOZ_WIDGET_GTK) */

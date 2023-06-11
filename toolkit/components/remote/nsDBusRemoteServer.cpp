@@ -7,6 +7,7 @@
 
 #include "nsDBusRemoteServer.h"
 
+#include "nsAppRunner.h"
 #include "nsCOMPtr.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/Base64.h"
@@ -30,7 +31,7 @@ static const char* introspect_template =
     "     <arg name=\"data\" direction=\"out\" type=\"s\"/>\n"
     "   </method>\n"
     " </interface>\n"
-    " <interface name=\"org.mozilla.%s\">\n"
+    " <interface name=\"%s\">\n"
     "   <method name=\"OpenURL\">\n"
     "     <arg name=\"url\" direction=\"in\" type=\"ay\"/>\n"
     "   </method>\n"
@@ -42,7 +43,7 @@ DBusHandlerResult nsDBusRemoteServer::Introspect(DBusMessage* msg) {
   if (!reply) return DBUS_HANDLER_RESULT_NEED_MEMORY;
 
   nsAutoCString introspect_xml;
-  introspect_xml = nsPrintfCString(introspect_template, mAppName.get());
+  introspect_xml = nsPrintfCString(introspect_template, mDBusAppName.get());
 
   const char* message = introspect_xml.get();
   dbus_message_append_args(reply, DBUS_TYPE_STRING, &message,
@@ -63,7 +64,7 @@ DBusHandlerResult nsDBusRemoteServer::OpenURL(DBusMessage* msg) {
                              &commandLine, &length, DBUS_TYPE_INVALID) ||
       length == 0) {
     nsAutoCString errorMsg;
-    errorMsg = nsPrintfCString("org.mozilla.%s.Error", mAppName.get());
+    errorMsg = nsPrintfCString("%s.Error", mDBusAppName.get());
     reply = dbus_message_new_error(msg, errorMsg.get(), "Wrong argument");
   } else {
     guint32 timestamp = gtk_get_current_event_time();
@@ -93,7 +94,7 @@ DBusHandlerResult nsDBusRemoteServer::HandleDBusMessage(
   }
 
   nsAutoCString ourInterfaceName;
-  ourInterfaceName = nsPrintfCString("org.mozilla.%s", mAppName.get());
+  ourInterfaceName = nsPrintfCString("%s", mDBusAppName.get());
 
   if ((strcmp("OpenURL", method) == 0) &&
       (strcmp(ourInterfaceName.get(), iface) == 0)) {
@@ -145,8 +146,7 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
   dbus_connection_set_exit_on_disconnect(mConnection, false);
   dbus_connection_setup_with_g_main(mConnection, nullptr);
 
-  mAppName = aAppName;
-  mozilla::XREAppData::SanitizeNameForDBus(mAppName);
+  gAppData->GetDBusAppName(mDBusAppName);
 
   nsAutoCString profileName;
   MOZ_TRY(
@@ -154,7 +154,7 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
 
   mozilla::XREAppData::SanitizeNameForDBus(profileName);
 
-  nsPrintfCString busName("org.mozilla.%s.%s", mAppName.get(),
+  nsPrintfCString busName("%s.%s", mDBusAppName.get(),
                           profileName.get());
   if (busName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
     busName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
@@ -167,7 +167,7 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
 
   // We don't have a valid busName yet - try to create a default one.
   if (!sDBusValidateBusName(busName.get(), nullptr)) {
-    busName = nsPrintfCString("org.mozilla.%s.%s", mAppName.get(), "default");
+    busName = nsPrintfCString("%s.%s", mDBusAppName.get(), "default");
     if (!sDBusValidateBusName(busName.get(), nullptr)) {
       // We failed completelly to get a valid bus name - just quit
       // to prevent crash at dbus_bus_request_name().
@@ -186,14 +186,16 @@ nsresult nsDBusRemoteServer::Startup(const char* aAppName,
     return NS_ERROR_FAILURE;
   }
 
-  mPathName = nsPrintfCString("/org/mozilla/%s/Remote", mAppName.get());
+  nsAutoCString dbusObjectPath;
+  gAppData->GetDBusObjectPath(dbusObjectPath);
+  mDBusObjectPath = nsPrintfCString("%s/Remote", dbusObjectPath.get()).get();
   static auto sDBusValidatePathName = (bool (*)(const char*, DBusError*))dlsym(
       RTLD_DEFAULT, "dbus_validate_path");
   if (!sDBusValidatePathName ||
-      !sDBusValidatePathName(mPathName.get(), nullptr)) {
+      !sDBusValidatePathName(mDBusObjectPath.get(), nullptr)) {
     return NS_ERROR_FAILURE;
   }
-  if (!dbus_connection_register_object_path(mConnection, mPathName.get(),
+  if (!dbus_connection_register_object_path(mConnection, mDBusObjectPath.get(),
                                             &remoteHandlersTable, this)) {
     return NS_ERROR_FAILURE;
   }
@@ -207,7 +209,7 @@ void nsDBusRemoteServer::Shutdown() {
     return;
   }
 
-  dbus_connection_unregister_object_path(mConnection, mPathName.get());
+  dbus_connection_unregister_object_path(mConnection, mDBusObjectPath.get());
 
   // dbus_connection_unref() will be called by RefPtr here.
   mConnection = nullptr;

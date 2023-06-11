@@ -216,11 +216,11 @@ PortalLocationProvider::Startup() {
   // Call CreateSession of the location portal
   GVariantBuilder builder;
 
-  nsAutoCString appName;
-  gAppData->GetDBusAppName(appName);
+  nsAutoCString dbusAppName;
+  gAppData->GetDBusAppName(dbusAppName);
   g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
   g_variant_builder_add(&builder, "{sv}", "session_handle_token",
-                        g_variant_new_string(appName.get()));
+                        g_variant_new_string(dbusAppName.get()));
 
   RefPtr<GVariant> result = dont_AddRef(g_dbus_proxy_call_sync(
       mDBUSLocationProxy, "CreateSession", g_variant_new("(a{sv})", &builder),

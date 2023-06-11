@@ -160,10 +160,10 @@ flatpak build-finish build                                      \
         --env=GTK_PATH=/app/lib/gtkmodules                      \
         --socket=pulseaudio                                     \
         --socket=wayland                                        \
-        --socket=x11                                            \
+        --socket=fallback-x11                                   \
         --socket=pcsc                                           \
         --socket=cups                                           \
-        --require-version=0.11.1                                \
+        --require-version=1.0.0                                 \
         --persist=.mozilla                                      \
         --filesystem=xdg-download:rw                            \
         --filesystem=/run/.heim_org.h5l.kcm-socket              \

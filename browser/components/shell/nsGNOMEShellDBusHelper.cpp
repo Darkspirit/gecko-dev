@@ -14,25 +14,25 @@
 #include "mozilla/XREAppData.h"
 #include "nsAppRunner.h"
 
-#define DBUS_BUS_NAME_TEMPLATE "org.mozilla.%s.SearchProvider"
-#define DBUS_OBJECT_PATH_TEMPLATE "/org/mozilla/%s/SearchProvider"
+#define DBUS_BUS_NAME_TEMPLATE "%s.SearchProvider"
+#define DBUS_OBJECT_PATH_TEMPLATE "%s/SearchProvider"
 
 const char* GetDBusBusName() {
   static const char* name = []() {
-    nsAutoCString appName;
-    gAppData->GetDBusAppName(appName);
+    nsAutoCString dbusAppName;
+    gAppData->GetDBusAppName(dbusAppName);
     return ToNewCString(nsPrintfCString(DBUS_BUS_NAME_TEMPLATE,
-                                        appName.get()));  // Intentionally leak
+                                        dbusAppName.get()));  // Intentionally leak
   }();
   return name;
 }
 
 const char* GetDBusObjectPath() {
   static const char* path = []() {
-    nsAutoCString appName;
-    gAppData->GetDBusAppName(appName);
+    nsAutoCString dbusObjectPath;
+    gAppData->GetDBusObjectPath(dbusObjectPath);
     return ToNewCString(nsPrintfCString(DBUS_OBJECT_PATH_TEMPLATE,
-                                        appName.get()));  // Intentionally leak
+                                        dbusObjectPath.get()));  // Intentionally leak
   }();
   return path;
 }

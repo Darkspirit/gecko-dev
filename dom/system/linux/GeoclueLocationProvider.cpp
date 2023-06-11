@@ -470,11 +470,14 @@ void GCLocProviderPriv::SetDesktopID() {
   MOZ_DIAGNOSTIC_ASSERT(mProxyClient && mCancellable,
                         "Watch() wasn't successfully called");
 
-  nsAutoCString appName;
-  gAppData->GetDBusAppName(appName);
+  // Should gAppData->GetDesktopEntry() be used instead?
+  // Snap's default desktop file name (package_app.desktop) is dbus compliant,
+  // but not its parallel instance desktop files (package+alias_app.desktop).
+  nsAutoCString desktopEntryName;
+  gAppData->GetDBusAppName(desktopEntryName);
   g_dbus_proxy_call(mProxyClient, kDBPropertySetMethod,
                     g_variant_new("(ssv)", kGCClientInterface, "DesktopId",
-                                  g_variant_new_string(appName.get())),
+                                  g_variant_new_string(desktopEntryName.get())),
                     G_DBUS_CALL_FLAGS_NONE, -1, mCancellable,
                     reinterpret_cast<GAsyncReadyCallback>(SetDesktopIDResponse),
                     this);

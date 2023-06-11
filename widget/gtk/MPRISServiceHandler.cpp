@@ -361,14 +361,15 @@ void MPRISServiceHandler::InitIdentity() {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
   rv = appInfo->GetVendor(mIdentity);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
-  rv = appInfo->GetName(mDesktopEntry);
+  nsCString name;
+  rv = appInfo->GetName(name);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   mIdentity.Append(' ');
-  mIdentity.Append(mDesktopEntry);
+  mIdentity.Append(name);
 
-  // Compute the desktop entry name like nsAppRunner does for g_set_prgname
-  ToLowerCase(mDesktopEntry);
+  rv = appInfo->GetDesktopEntryName(mDesktopEntry);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 const char* MPRISServiceHandler::Identity() const {

@@ -24,7 +24,7 @@ class nsDBusRemoteClient : public nsRemoteClient {
   void Shutdown();
 
  private:
-  bool GetRemoteDestinationName(const char* aProgram, const char* aProfile,
+  bool GetRemoteDestinationName(const char* aDBusAppName, const char* aProfile,
                                 nsCString& aDestinationName);
   nsresult DoSendDBusCommandLine(const char* aProgram, const char* aProfile,
                                  const char* aBuffer, int aLength);

@@ -16,6 +16,8 @@
 #include <dlfcn.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+extern const mozilla::XREAppData* gAppData;
+
 #undef LOG
 #ifdef MOZ_LOGGING
 static mozilla::LazyLogModule sRemoteLm("nsDBusRemoteClient");
@@ -84,7 +86,7 @@ nsresult nsDBusRemoteClient::SendCommandLine(
   return rv;
 }
 
-bool nsDBusRemoteClient::GetRemoteDestinationName(const char* aProgram,
+bool nsDBusRemoteClient::GetRemoteDestinationName(const char* aDBusAppName,
                                                   const char* aProfile,
                                                   nsCString& aDestinationName) {
   // We have a profile name - just create the destination.
@@ -97,7 +99,7 @@ bool nsDBusRemoteClient::GetRemoteDestinationName(const char* aProgram,
   mozilla::XREAppData::SanitizeNameForDBus(profileName);
 
   aDestinationName =
-      nsPrintfCString("org.mozilla.%s.%s", aProgram, profileName.get());
+      nsPrintfCString("org.mozilla.%s.%s", aDBusAppName, profileName.get());
   if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
     aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
 
@@ -111,7 +113,7 @@ bool nsDBusRemoteClient::GetRemoteDestinationName(const char* aProgram,
   if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
     // We don't have a valid busName yet - try to create a default one.
     aDestinationName =
-        nsPrintfCString("org.mozilla.%s.%s", aProgram, "default");
+        nsPrintfCString("org.mozilla.%s.%s", aDBusAppName, "default");
     if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
       // We failed completelly to get a valid bus name - just quit
       // to prevent crash at dbus_bus_request_name().
@@ -129,17 +131,19 @@ nsresult nsDBusRemoteClient::DoSendDBusCommandLine(const char* aProgram,
                                                    int aLength) {
   LOG("nsDBusRemoteClient::DoSendDBusCommandLine()");
 
-  nsAutoCString appName(aProgram);
-  mozilla::XREAppData::SanitizeNameForDBus(appName);
+  nsAutoCString dbusAppName;
+  gAppData->GetDBusAppName(dbusAppName);
 
   nsAutoCString destinationName;
-  if (!GetRemoteDestinationName(appName.get(), aProfile, destinationName)) {
+  if (!GetRemoteDestinationName(dbusAppName.get(), aProfile, destinationName)) {
     LOG("  failed to get remote destination name");
     return NS_ERROR_FAILURE;
   }
 
+  nsAutoCString dbusObjectPath;
+  gAppData->GetDBusObjectPath(dbusObjectPath);
   nsAutoCString pathName;
-  pathName = nsPrintfCString("/org/mozilla/%s/Remote", appName.get());
+  pathName = nsPrintfCString("%s/Remote", dbusObjectPath.get());
 
   static auto sDBusValidatePathName = (bool (*)(const char*, DBusError*))dlsym(
       RTLD_DEFAULT, "dbus_validate_path");
@@ -149,18 +153,15 @@ nsresult nsDBusRemoteClient::DoSendDBusCommandLine(const char* aProgram,
     return NS_ERROR_FAILURE;
   }
 
-  nsAutoCString remoteInterfaceName;
-  remoteInterfaceName = nsPrintfCString("org.mozilla.%s", appName.get());
-
   LOG("  DBus destination: %s\n", destinationName.get());
   LOG("  DBus path: %s\n", pathName.get());
-  LOG("  DBus interface: %s\n", remoteInterfaceName.get());
+  LOG("  DBus interface: %s\n", dbusAppName.get());
 
   RefPtr<DBusMessage> msg =
       already_AddRefed<DBusMessage>(dbus_message_new_method_call(
           destinationName.get(),
           pathName.get(),             // object to call on
-          remoteInterfaceName.get(),  // interface to call on
+          dbusAppName.get(),          // interface to call on
           "OpenURL"));                // method name
   if (!msg) {
     LOG("  failed to create DBus message");

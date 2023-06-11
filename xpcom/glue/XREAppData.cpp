@@ -38,6 +38,8 @@ void XREAppData::SanitizeNameForDBus(nsACString& aName) {
 
   // D-Bus names can contain only [a-z][A-Z][0-9]_, so we replace all characters
   // that aren't in that range with underscores.
+  // https://dbus.freedesktop.org/doc/dbus-specification.html
+  // https://github.com/diwic/dbus-rs/blob/master/dbus-strings/src/validity.rs
   char* cur = aName.BeginWriting();
   char* end = aName.EndWriting();
   for (; cur != end; cur++) {
@@ -47,14 +49,28 @@ void XREAppData::SanitizeNameForDBus(nsACString& aName) {
   }
 }
 
+// e.g. org.mozilla.firefox_nightly
 void XREAppData::GetDBusAppName(nsACString& aName) const {
   const char* env = getenv("MOZ_DBUS_APP_NAME");
   if (env) {
     aName.Assign(env);
-  } else {
-    aName.Assign(remotingName);
     SanitizeNameForDBus(aName);
+  } else {
+    nsCString dBusVendorName(vendor);
+    nsCString dBusRemotingName(remotingName);
+    ToLowerCase(dBusVendorName);
+    SanitizeNameForDBus(dBusVendorName);
+    SanitizeNameForDBus(dBusRemotingName);
+    aName.Assign(nsPrintfCString("org.%s.%s", dBusVendorName.get(), dBusRemotingName.get()).get());
   }
+}
+
+// e.g. /org/mozilla/firefox_nightly
+void XREAppData::GetDBusObjectPath(nsACString& aName) const {
+  nsCString dBusAppName;
+  GetDBusAppName(dBusAppName);
+  dBusAppName.ReplaceChar('.', '/');
+  aName.Assign(nsPrintfCString("/%s", dBusAppName.get()).get());
 }
 
 }  // namespace mozilla

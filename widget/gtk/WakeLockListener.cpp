@@ -12,6 +12,8 @@
 #  include <dbus/dbus.h>
 #  include <dbus/dbus-glib-lowlevel.h>
 
+#  include "nsXULAppAPI.h"
+#  include "nsIXULAppInfo.h"
 #  include "WidgetUtilsGtk.h"
 
 #  if defined(MOZ_X11)
@@ -143,10 +145,16 @@ bool WakeLockTopic::SendFreeDesktopPowerInhibitMessage() {
     return false;
   }
 
-  const char* app = g_get_prgname();
+  nsresult rv;
+  nsCOMPtr<nsIXULAppInfo> appInfo =
+      do_GetService("@mozilla.org/xre/app-info;1", &rv);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  nsAutoCString dBusAppName;
+  rv = appInfo->GetDBusAppName(dBusAppName);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   const char* topic = mTopic.get();
-  dbus_message_append_args(message, DBUS_TYPE_STRING, &app, DBUS_TYPE_STRING,
-                           &topic, DBUS_TYPE_INVALID);
+  dbus_message_append_args(message, DBUS_TYPE_STRING, dBusAppName.get(), DBUS_TYPE_STRING,
+                            &topic, DBUS_TYPE_INVALID);
 
   return SendMessage(message);
 }
@@ -161,9 +169,15 @@ bool WakeLockTopic::SendFreeDesktopScreensaverInhibitMessage() {
     return false;
   }
 
-  const char* app = g_get_prgname();
+  nsresult rv;
+  nsCOMPtr<nsIXULAppInfo> appInfo =
+      do_GetService("@mozilla.org/xre/app-info;1", &rv);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  nsAutoCString dBusAppName;
+  rv = appInfo->GetDBusAppName(dBusAppName);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   const char* topic = mTopic.get();
-  dbus_message_append_args(message, DBUS_TYPE_STRING, &app, DBUS_TYPE_STRING,
+  dbus_message_append_args(message, DBUS_TYPE_STRING, dBusAppName.get(), DBUS_TYPE_STRING,
                            &topic, DBUS_TYPE_INVALID);
 
   return SendMessage(message);
@@ -181,9 +195,15 @@ bool WakeLockTopic::SendGNOMEInhibitMessage() {
 
   static const uint32_t xid = 0;
   static const uint32_t flags = (1 << 3);  // Inhibit idle
-  const char* app = g_get_prgname();
+  nsresult rv;
+  nsCOMPtr<nsIXULAppInfo> appInfo =
+      do_GetService("@mozilla.org/xre/app-info;1", &rv);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  nsAutoCString dBusAppName;
+  rv = appInfo->GetDBusAppName(dBusAppName);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   const char* topic = mTopic.get();
-  dbus_message_append_args(message, DBUS_TYPE_STRING, &app, DBUS_TYPE_UINT32,
+  dbus_message_append_args(message, DBUS_TYPE_STRING, dBusAppName.get(), DBUS_TYPE_UINT32,
                            &xid, DBUS_TYPE_STRING, &topic, DBUS_TYPE_UINT32,
                            &flags, DBUS_TYPE_INVALID);
 
