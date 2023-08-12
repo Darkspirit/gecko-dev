@@ -6,9 +6,6 @@
 
 #include "ScreenHelperGTK.h"
 
-#ifdef MOZ_X11
-#  include <gdk/gdkx.h>
-#endif /* MOZ_X11 */
 #ifdef MOZ_WAYLAND
 #  include <gdk/gdkwayland.h>
 #endif /* MOZ_WAYLAND */
@@ -68,32 +65,11 @@ static void screen_resolution_changed(GdkScreen* aScreen, GParamSpec* aPspec,
 static GdkFilterReturn root_window_event_filter(GdkXEvent* aGdkXEvent,
                                                 GdkEvent* aGdkEvent,
                                                 gpointer aClosure) {
-#ifdef MOZ_X11
-  ScreenGetterGtk* self = static_cast<ScreenGetterGtk*>(aClosure);
-  XEvent* xevent = static_cast<XEvent*>(aGdkXEvent);
-
-  switch (xevent->type) {
-    case PropertyNotify: {
-      XPropertyEvent* propertyEvent = &xevent->xproperty;
-      if (propertyEvent->atom == self->NetWorkareaAtom()) {
-        LOG_SCREEN("Work area size changed");
-        self->RefreshScreens();
-      }
-    } break;
-    default:
-      break;
-  }
-#endif
-
   return GDK_FILTER_CONTINUE;
 }
 
 ScreenGetterGtk::ScreenGetterGtk()
     : mRootWindow(nullptr)
-#ifdef MOZ_X11
-      ,
-      mNetWorkareaAtom(0)
-#endif
 {
 }
 
@@ -122,13 +98,6 @@ void ScreenGetterGtk::Init() {
   // handler.
   g_signal_connect_after(defaultScreen, "notify::resolution",
                          G_CALLBACK(screen_resolution_changed), this);
-#ifdef MOZ_X11
-  gdk_window_add_filter(mRootWindow, root_window_event_filter, this);
-  if (GdkIsX11Display()) {
-    mNetWorkareaAtom = XInternAtom(GDK_WINDOW_XDISPLAY(mRootWindow),
-                                   "_NET_WORKAREA", X11False);
-  }
-#endif
   RefreshScreens();
 }
 

@@ -119,15 +119,6 @@ if CONFIG["MOZ_WAYLAND"]:
         "WaylandBuffer.h",
     ]
 
-if CONFIG["MOZ_X11"]:
-    UNIFIED_SOURCES += [
-        "nsClipboardX11.cpp",
-        "nsShmImage.cpp",
-        "WindowSurfaceX11.cpp",
-        "WindowSurfaceX11Image.cpp",
-        "WindowSurfaceX11SHM.cpp",
-    ]
-
 if CONFIG["NS_PRINTING"]:
     UNIFIED_SOURCES += [
         "nsDeviceContextSpecG.cpp",

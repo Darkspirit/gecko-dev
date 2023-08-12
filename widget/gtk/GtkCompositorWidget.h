@@ -81,9 +81,6 @@ class GtkCompositorWidget : public CompositorWidget,
 
   void SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);
 
-#if defined(MOZ_X11)
-  Window XWindow() const { return mXWindow; }
-#endif
 #if defined(MOZ_WAYLAND)
   RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
 #endif
@@ -101,9 +98,6 @@ class GtkCompositorWidget : public CompositorWidget,
  private:
 #if defined(MOZ_WAYLAND)
   bool ConfigureWaylandBackend();
-#endif
-#if defined(MOZ_X11)
-  bool ConfigureX11Backend(Window aXWindow, bool aShaped);
 #endif
 #ifdef MOZ_LOGGING
   bool IsPopup();
@@ -123,9 +117,6 @@ class GtkCompositorWidget : public CompositorWidget,
 
   WindowSurfaceProvider mProvider;
 
-#if defined(MOZ_X11)
-  Window mXWindow = {};
-#endif
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::layers::NativeLayerRootWayland> mNativeLayerRoot;
 #endif

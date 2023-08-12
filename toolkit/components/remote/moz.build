@@ -26,12 +26,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
             "nsUnixRemoteServer.h",
             "RemoteUtils.h",
         ]
-    else:
-        SOURCES += [
-            "nsGTKRemoteServer.cpp",
-            "nsXRemoteClient.cpp",
-            "nsXRemoteServer.cpp",
-        ]
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":

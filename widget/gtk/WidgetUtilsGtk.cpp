@@ -357,71 +357,7 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
 
 // https://specifications.freedesktop.org/wm-spec/1.3/ar01s05.html
 static nsCString GetWindowManagerName() {
-  if (!GdkIsX11Display()) {
-    return {};
-  }
-
-#ifdef MOZ_X11
-  Display* xdisplay = gdk_x11_get_default_xdisplay();
-  Window root_win =
-      GDK_WINDOW_XID(gdk_screen_get_root_window(gdk_screen_get_default()));
-
-  int actual_format_return;
-  Atom actual_type_return;
-  unsigned long nitems_return;
-  unsigned long bytes_after_return;
-  unsigned char* prop_return = nullptr;
-  auto releaseXProperty = MakeScopeExit([&] {
-    if (prop_return) {
-      XFree(prop_return);
-    }
-  });
-
-  Atom property = XInternAtom(xdisplay, "_NET_SUPPORTING_WM_CHECK", true);
-  Atom req_type = XInternAtom(xdisplay, "WINDOW", true);
-  if (!property || !req_type) {
-    return {};
-  }
-  int result =
-      XGetWindowProperty(xdisplay, root_win, property,
-                         0L,                  // offset
-                         sizeof(Window) / 4,  // length
-                         false,               // delete
-                         req_type, &actual_type_return, &actual_format_return,
-                         &nitems_return, &bytes_after_return, &prop_return);
-
-  if (result != Success || bytes_after_return != 0 || nitems_return != 1) {
-    return {};
-  }
-
-  Window wmWindow = reinterpret_cast<Window*>(prop_return)[0];
-  if (!wmWindow) {
-    return {};
-  }
-
-  XFree(prop_return);
-  prop_return = nullptr;
-
-  property = XInternAtom(xdisplay, "_NET_WM_NAME", true);
-  req_type = XInternAtom(xdisplay, "UTF8_STRING", true);
-  if (!property || !req_type) {
-    return {};
-  }
-  result =
-      XGetWindowProperty(xdisplay, wmWindow, property,
-                         0L,         // offset
-                         INT32_MAX,  // length
-                         false,      // delete
-                         req_type, &actual_type_return, &actual_format_return,
-                         &nitems_return, &bytes_after_return, &prop_return);
-  if (result != Success || bytes_after_return != 0) {
-    return {};
-  }
-
-  return nsCString(reinterpret_cast<const char*>(prop_return));
-#else
   return {};
-#endif
 }
 
 // Getting a reliable identifier is quite tricky. We try to use the standard

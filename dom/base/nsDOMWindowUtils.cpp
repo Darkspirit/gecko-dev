@@ -80,10 +80,6 @@
 
 #if defined(MOZ_WIDGET_GTK)
 #  include <gdk/gdk.h>
-#  if defined(MOZ_X11)
-#    include <gdk/gdkx.h>
-#    include "X11UndefineNone.h"
-#  endif
 #endif
 
 #include "mozilla/dom/AudioDeviceInfo.h"

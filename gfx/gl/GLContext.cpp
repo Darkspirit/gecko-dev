@@ -877,23 +877,6 @@ bool GLContext::InitImpl() {
     // (RGBA32F more restrictive than RGBA16F)
     maxTexSize = 8192;
 #endif
-#ifdef MOZ_X11
-    if (mVendor == GLVendor::Nouveau) {
-      // see bug 814716. Clamp MaxCubeMapTextureSize at 2K for Nouveau.
-      maxCubeSize = 2048;
-    } else if (mVendor == GLVendor::Intel) {
-      // Bug 1199923. Driver seems to report a larger max size than
-      // actually supported.
-      maxTexSize = mMaxTextureSize / 2;
-    }
-    // Bug 1367570. Explicitly set vertex attributes [1,3] to opaque
-    // black because Nvidia doesn't do it for us.
-    if (mVendor == GLVendor::NVIDIA) {
-      for (size_t i = 1; i <= 3; ++i) {
-        mSymbols.fVertexAttrib4f(i, 0, 0, 0, 1);
-      }
-    }
-#endif
     if (Renderer() == GLRenderer::AdrenoTM420) {
       // see bug 1194923. Calling glFlush before glDeleteFramebuffers
       // prevents occasional driver crash.

@@ -356,34 +356,6 @@ static void AddX11Dependencies(SandboxBroker::Policy* policy) {
     bumblebeeSocket = "/var/run/bumblebee.socket";
   }
   policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
-
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
-  // Allow local X11 connections, for several purposes:
-  //
-  // * for content processes to use WebGL when the browser is in headless
-  //   mode, by opening the X display if/when needed
-  //
-  // * if Primus or VirtualGL is used, to contact the secondary X server
-  static const bool kIsX11 =
-      !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
-  if (kIsX11) {
-    policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-    if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
-      policy->AddPath(rdonly, xauth);
-    } else if (auto* const home = PR_GetEnv("HOME")) {
-      // This follows the logic in libXau: append "/.Xauthority",
-      // even if $HOME ends in a slash, except in the special case
-      // where HOME=/ because POSIX allows implementations to treat
-      // an initial double slash specially.
-      nsAutoCString xauth(home);
-      if (xauth != "/"_ns) {
-        xauth.Append('/');
-      }
-      xauth.AppendLiteral(".Xauthority");
-      policy->AddPath(rdonly, xauth.get());
-    }
-  }
-#endif
 }
 
 static void AddGLDependencies(SandboxBroker::Policy* policy) {

@@ -7,10 +7,6 @@
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfx2DGlue.h"
-#ifdef MOZ_X11
-#  include "cairo.h"
-#  include "gfxXlibSurface.h"
-#endif
 #include "mozilla/gfx/Logging.h"
 
 using namespace mozilla;

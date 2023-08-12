@@ -939,30 +939,6 @@ bool CreateConfig(EglDisplay& aEgl, EGLConfig* aConfig, int32_t aDepth,
           continue;
         }
       }
-#ifdef MOZ_X11
-      if (GdkIsX11Display()) {
-        int configVisualID;
-        if (!aEgl.fGetConfigAttrib(config, LOCAL_EGL_NATIVE_VISUAL_ID,
-                                   &configVisualID)) {
-          continue;
-        }
-
-        XVisualInfo visual_info_template, *visual_info;
-        int num_visuals;
-
-        visual_info_template.visualid = configVisualID;
-        visual_info =
-            XGetVisualInfo(GDK_DISPLAY_XDISPLAY(gdk_display_get_default()),
-                           VisualIDMask, &visual_info_template, &num_visuals);
-
-        if (!visual_info || visual_info->depth != aDepth) {
-          if (aAllowFallback && !fallbackConfig) {
-            fallbackConfig = Some(config);
-          }
-          continue;
-        }
-      }
-#endif
       *aConfig = config;
       return true;
     }
@@ -1107,32 +1083,6 @@ static EGLConfig ChooseConfig(EglDisplay& egl, const GLContextCreateDesc& desc,
   EGLConfig config = configs[0];
   return config;
 }
-
-#ifdef MOZ_X11
-/* static */
-bool GLContextEGL::FindVisual(int* const out_visualId) {
-  nsCString discardFailureId;
-  const auto egl = DefaultEglDisplay(&discardFailureId);
-  if (!egl) {
-    gfxCriticalNote
-        << "GLContextEGL::FindVisual(): Failed to load EGL library!";
-    return false;
-  }
-
-  EGLConfig config;
-  const int bpp = 32;
-  if (!CreateConfig(*egl, &config, bpp, /* aEnableDepthBuffer */ false,
-                    /* aUseGles */ false, /* aAllowFallback */ false)) {
-    // We are on a buggy driver. Do not return a visual so a fallback path can
-    // be used. See https://gitlab.freedesktop.org/mesa/mesa/-/issues/149
-    return false;
-  }
-  if (egl->fGetConfigAttrib(config, LOCAL_EGL_NATIVE_VISUAL_ID, out_visualId)) {
-    return true;
-  }
-  return false;
-}
-#endif
 
 /*static*/
 RefPtr<GLContextEGL> GLContextEGL::CreateWithoutSurface(

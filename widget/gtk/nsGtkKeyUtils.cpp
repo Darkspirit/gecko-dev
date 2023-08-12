@@ -14,11 +14,6 @@
 #include <gdk/gdk.h>
 #include <dlfcn.h>
 #include <gdk/gdkkeysyms-compat.h>
-#ifdef MOZ_X11
-#  include <gdk/gdkx.h>
-#  include <X11/XKBlib.h>
-#  include "X11UndefineNone.h"
-#endif
 #include "IMContextWrapper.h"
 #include "WidgetUtils.h"
 #include "WidgetUtilsGtk.h"
@@ -57,9 +52,6 @@ namespace widget {
 
 KeymapWrapper* KeymapWrapper::sInstance = nullptr;
 guint KeymapWrapper::sLastRepeatableHardwareKeyCode = 0;
-#ifdef MOZ_X11
-Time KeymapWrapper::sLastRepeatableKeyTime = 0;
-#endif
 KeymapWrapper::RepeatState KeymapWrapper::sRepeatState =
     KeymapWrapper::NOT_PRESSED;
 
@@ -358,19 +350,12 @@ void KeymapWrapper::Shutdown() {
 KeymapWrapper::KeymapWrapper()
     : mInitialized(false),
       mGdkKeymap(gdk_keymap_get_default()),
-      mXKBBaseEventCode(0),
       mOnKeysChangedSignalHandle(0),
       mOnDirectionChangedSignalHandle(0) {
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("%p Constructor, mGdkKeymap=%p", this, mGdkKeymap));
 
   g_object_ref(mGdkKeymap);
-
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    InitXKBExtension();
-  }
-#endif
 }
 
 void KeymapWrapper::Init() {
@@ -385,19 +370,10 @@ void KeymapWrapper::Init() {
   mModifierKeys.Clear();
   memset(mModifierMasks, 0, sizeof(mModifierMasks));
 
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    InitBySystemSettingsX11();
-  }
-#endif
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
     InitBySystemSettingsWayland();
   }
-#endif
-
-#ifdef MOZ_X11
-  gdk_window_add_filter(nullptr, FilterEvents, this);
 #endif
 
   MOZ_LOG(gKeyLog, LogLevel::Info,
@@ -410,240 +386,6 @@ void KeymapWrapper::Init() {
            GetModifierMask(CTRL), GetModifierMask(ALT), GetModifierMask(META),
            GetModifierMask(SUPER), GetModifierMask(HYPER)));
 }
-
-#ifdef MOZ_X11
-void KeymapWrapper::InitXKBExtension() {
-  PodZero(&mKeyboardState);
-
-  int xkbMajorVer = XkbMajorVersion;
-  int xkbMinorVer = XkbMinorVersion;
-  if (!XkbLibraryVersion(&xkbMajorVer, &xkbMinorVer)) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p InitXKBExtension failed due to failure of "
-             "XkbLibraryVersion()",
-             this));
-    return;
-  }
-
-  Display* display = gdk_x11_display_get_xdisplay(gdk_display_get_default());
-
-  // XkbLibraryVersion() set xkbMajorVer and xkbMinorVer to that of the
-  // library, which may be newer than what is required of the server in
-  // XkbQueryExtension(), so these variables should be reset to
-  // XkbMajorVersion and XkbMinorVersion before the XkbQueryExtension call.
-  xkbMajorVer = XkbMajorVersion;
-  xkbMinorVer = XkbMinorVersion;
-  int opcode, baseErrorCode;
-  if (!XkbQueryExtension(display, &opcode, &mXKBBaseEventCode, &baseErrorCode,
-                         &xkbMajorVer, &xkbMinorVer)) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitXKBExtension failed due to failure of "
-             "XkbQueryExtension(), display=0x%p",
-             this, display));
-    return;
-  }
-
-  if (!XkbSelectEventDetails(display, XkbUseCoreKbd, XkbStateNotify,
-                             XkbModifierStateMask, XkbModifierStateMask)) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitXKBExtension failed due to failure of "
-             "XkbSelectEventDetails() for XModifierStateMask, display=0x%p",
-             this, display));
-    return;
-  }
-
-  if (!XkbSelectEventDetails(display, XkbUseCoreKbd, XkbControlsNotify,
-                             XkbPerKeyRepeatMask, XkbPerKeyRepeatMask)) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitXKBExtension failed due to failure of "
-             "XkbSelectEventDetails() for XkbControlsNotify, display=0x%p",
-             this, display));
-    return;
-  }
-
-  if (!XGetKeyboardControl(display, &mKeyboardState)) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitXKBExtension failed due to failure of "
-             "XGetKeyboardControl(), display=0x%p",
-             this, display));
-    return;
-  }
-
-  MOZ_LOG(gKeyLog, LogLevel::Info, ("%p   InitXKBExtension, Succeeded", this));
-}
-
-void KeymapWrapper::InitBySystemSettingsX11() {
-  MOZ_LOG(gKeyLog, LogLevel::Info,
-          ("%p InitBySystemSettingsX11, mGdkKeymap=%p", this, mGdkKeymap));
-
-  if (!mOnKeysChangedSignalHandle) {
-    mOnKeysChangedSignalHandle = g_signal_connect(
-        mGdkKeymap, "keys-changed", (GCallback)OnKeysChanged, this);
-  }
-  if (!mOnDirectionChangedSignalHandle) {
-    mOnDirectionChangedSignalHandle = g_signal_connect(
-        mGdkKeymap, "direction-changed", (GCallback)OnDirectionChanged, this);
-  }
-
-  Display* display = gdk_x11_display_get_xdisplay(gdk_display_get_default());
-
-  int min_keycode = 0;
-  int max_keycode = 0;
-  XDisplayKeycodes(display, &min_keycode, &max_keycode);
-
-  int keysyms_per_keycode = 0;
-  KeySym* xkeymap =
-      XGetKeyboardMapping(display, min_keycode, max_keycode - min_keycode + 1,
-                          &keysyms_per_keycode);
-  if (!xkeymap) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitBySystemSettings, "
-             "Failed due to null xkeymap",
-             this));
-    return;
-  }
-
-  XModifierKeymap* xmodmap = XGetModifierMapping(display);
-  if (!xmodmap) {
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitBySystemSettings, "
-             "Failed due to null xmodmap",
-             this));
-    XFree(xkeymap);
-    return;
-  }
-  MOZ_LOG(gKeyLog, LogLevel::Info,
-          ("%p   InitBySystemSettings, min_keycode=%d, "
-           "max_keycode=%d, keysyms_per_keycode=%d, max_keypermod=%d",
-           this, min_keycode, max_keycode, keysyms_per_keycode,
-           xmodmap->max_keypermod));
-
-  // The modifiermap member of the XModifierKeymap structure contains 8 sets
-  // of max_keypermod KeyCodes, one for each modifier in the order Shift,
-  // Lock, Control, Mod1, Mod2, Mod3, Mod4, and Mod5.
-  // Only nonzero KeyCodes have meaning in each set, and zero KeyCodes are
-  // ignored.
-
-  // Note that two or more modifiers may use one modifier flag.  E.g.,
-  // on Ubuntu 10.10, Alt and Meta share the Mod1 in default settings.
-  // And also Super and Hyper share the Mod4. In such cases, we need to
-  // decide which modifier flag means one of DOM modifiers.
-
-  // mod[0] is Modifier introduced by Mod1.
-  Modifier mod[5];
-  int32_t foundLevel[5];
-  for (uint32_t i = 0; i < ArrayLength(mod); i++) {
-    mod[i] = NOT_MODIFIER;
-    foundLevel[i] = INT32_MAX;
-  }
-  const uint32_t map_size = 8 * xmodmap->max_keypermod;
-  for (uint32_t i = 0; i < map_size; i++) {
-    KeyCode keycode = xmodmap->modifiermap[i];
-    MOZ_LOG(gKeyLog, LogLevel::Info,
-            ("%p   InitBySystemSettings, "
-             "  i=%d, keycode=0x%08X",
-             this, i, keycode));
-    if (!keycode || keycode < min_keycode || keycode > max_keycode) {
-      continue;
-    }
-
-    ModifierKey* modifierKey = GetModifierKey(keycode);
-    if (!modifierKey) {
-      modifierKey = mModifierKeys.AppendElement(ModifierKey(keycode));
-    }
-
-    const KeySym* syms =
-        xkeymap + (keycode - min_keycode) * keysyms_per_keycode;
-    const uint32_t bit = i / xmodmap->max_keypermod;
-    modifierKey->mMask |= 1 << bit;
-
-    // We need to know the meaning of Mod1, Mod2, Mod3, Mod4 and Mod5.
-    // Let's skip if current map is for others.
-    if (bit < 3) {
-      continue;
-    }
-
-    const int32_t modIndex = bit - 3;
-    for (int32_t j = 0; j < keysyms_per_keycode; j++) {
-      Modifier modifier = GetModifierForGDKKeyval(syms[j]);
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("%p   InitBySystemSettings, "
-               "    Mod%d, j=%d, syms[j]=%s(0x%lX), modifier=%s",
-               this, modIndex + 1, j, gdk_keyval_name(syms[j]), syms[j],
-               GetModifierName(modifier)));
-
-      switch (modifier) {
-        case NOT_MODIFIER:
-          // Don't overwrite the stored information with
-          // NOT_MODIFIER.
-          break;
-        case CAPS_LOCK:
-        case SHIFT:
-        case CTRL:
-          // Ignore the modifiers defined in GDK spec. They shouldn't
-          // be mapped to Mod1-5 because they must not work on native
-          // GTK applications.
-          break;
-        default:
-          // If new modifier is found in higher level than stored
-          // value, we don't need to overwrite it.
-          if (j > foundLevel[modIndex]) {
-            break;
-          }
-          // If new modifier is more important than stored value,
-          // we should overwrite it with new modifier.
-          if (j == foundLevel[modIndex]) {
-            mod[modIndex] = std::min(modifier, mod[modIndex]);
-            break;
-          }
-          foundLevel[modIndex] = j;
-          mod[modIndex] = modifier;
-          break;
-      }
-    }
-  }
-
-  for (uint32_t i = 0; i < COUNT_OF_MODIFIER_INDEX; i++) {
-    Modifier modifier;
-    switch (i) {
-      case INDEX_NUM_LOCK:
-        modifier = NUM_LOCK;
-        break;
-      case INDEX_SCROLL_LOCK:
-        modifier = SCROLL_LOCK;
-        break;
-      case INDEX_ALT:
-        modifier = ALT;
-        break;
-      case INDEX_META:
-        modifier = META;
-        break;
-      case INDEX_SUPER:
-        modifier = SUPER;
-        break;
-      case INDEX_HYPER:
-        modifier = HYPER;
-        break;
-      case INDEX_LEVEL3:
-        modifier = LEVEL3;
-        break;
-      case INDEX_LEVEL5:
-        modifier = LEVEL5;
-        break;
-      default:
-        MOZ_CRASH("All indexes must be handled here");
-    }
-    for (uint32_t j = 0; j < ArrayLength(mod); j++) {
-      if (modifier == mod[j]) {
-        mModifierMasks[i] |= 1 << (j + 3);
-      }
-    }
-  }
-
-  XFreeModifiermap(xmodmap);
-  XFree(xkeymap);
-}
-#endif
 
 #ifdef MOZ_WAYLAND
 void KeymapWrapper::SetModifierMask(xkb_keymap* aKeymap,
@@ -786,9 +528,6 @@ static const struct wl_seat_listener seat_listener = {
 #endif
 
 KeymapWrapper::~KeymapWrapper() {
-#ifdef MOZ_X11
-  gdk_window_remove_filter(nullptr, FilterEvents, this);
-#endif
   if (mOnKeysChangedSignalHandle) {
     g_signal_handler_disconnect(mGdkKeymap, mOnKeysChangedSignalHandle);
   }
@@ -798,122 +537,6 @@ KeymapWrapper::~KeymapWrapper() {
   g_object_unref(mGdkKeymap);
   MOZ_LOG(gKeyLog, LogLevel::Info, ("%p Destructor", this));
 }
-
-#ifdef MOZ_X11
-/* static */
-GdkFilterReturn KeymapWrapper::FilterEvents(GdkXEvent* aXEvent,
-                                            GdkEvent* aGdkEvent,
-                                            gpointer aData) {
-  XEvent* xEvent = static_cast<XEvent*>(aXEvent);
-  switch (xEvent->type) {
-    case KeyPress: {
-      // If the key doesn't support auto repeat, ignore the event because
-      // even if such key (e.g., Shift) is pressed during auto repeat of
-      // anoter key, it doesn't stop the auto repeat.
-      KeymapWrapper* self = static_cast<KeymapWrapper*>(aData);
-      if (!self->IsAutoRepeatableKey(xEvent->xkey.keycode)) {
-        break;
-      }
-      if (sRepeatState == NOT_PRESSED) {
-        sRepeatState = FIRST_PRESS;
-        MOZ_LOG(gKeyLog, LogLevel::Info,
-                ("FilterEvents(aXEvent={ type=KeyPress, "
-                 "xkey={ keycode=0x%08X, state=0x%08X, time=%lu } }, "
-                 "aGdkEvent={ state=0x%08X }), "
-                 "detected first keypress",
-                 xEvent->xkey.keycode, xEvent->xkey.state, xEvent->xkey.time,
-                 reinterpret_cast<GdkEventKey*>(aGdkEvent)->state));
-      } else if (sLastRepeatableHardwareKeyCode == xEvent->xkey.keycode) {
-        if (sLastRepeatableKeyTime == xEvent->xkey.time &&
-            sLastRepeatableHardwareKeyCode ==
-                IMContextWrapper::
-                    GetWaitingSynthesizedKeyPressHardwareKeyCode()) {
-          // On some environment, IM may generate duplicated KeyPress event
-          // without any special state flags.  In such case, we shouldn't
-          // treat the event as "repeated".
-          MOZ_LOG(gKeyLog, LogLevel::Info,
-                  ("FilterEvents(aXEvent={ type=KeyPress, "
-                   "xkey={ keycode=0x%08X, state=0x%08X, time=%lu } }, "
-                   "aGdkEvent={ state=0x%08X }), "
-                   "igored keypress since it must be synthesized by IME",
-                   xEvent->xkey.keycode, xEvent->xkey.state, xEvent->xkey.time,
-                   reinterpret_cast<GdkEventKey*>(aGdkEvent)->state));
-          break;
-        }
-        sRepeatState = REPEATING;
-        MOZ_LOG(gKeyLog, LogLevel::Info,
-                ("FilterEvents(aXEvent={ type=KeyPress, "
-                 "xkey={ keycode=0x%08X, state=0x%08X, time=%lu } }, "
-                 "aGdkEvent={ state=0x%08X }), "
-                 "detected repeating keypress",
-                 xEvent->xkey.keycode, xEvent->xkey.state, xEvent->xkey.time,
-                 reinterpret_cast<GdkEventKey*>(aGdkEvent)->state));
-      } else {
-        // If a different key is pressed while another key is pressed,
-        // auto repeat system repeats only the last pressed key.
-        // So, setting new keycode and setting repeat state as first key
-        // press should work fine.
-        sRepeatState = FIRST_PRESS;
-        MOZ_LOG(gKeyLog, LogLevel::Info,
-                ("FilterEvents(aXEvent={ type=KeyPress, "
-                 "xkey={ keycode=0x%08X, state=0x%08X, time=%lu } }, "
-                 "aGdkEvent={ state=0x%08X }), "
-                 "detected different keypress",
-                 xEvent->xkey.keycode, xEvent->xkey.state, xEvent->xkey.time,
-                 reinterpret_cast<GdkEventKey*>(aGdkEvent)->state));
-      }
-      sLastRepeatableHardwareKeyCode = xEvent->xkey.keycode;
-      sLastRepeatableKeyTime = xEvent->xkey.time;
-      break;
-    }
-    case KeyRelease: {
-      if (sLastRepeatableHardwareKeyCode != xEvent->xkey.keycode) {
-        // This case means the key release event is caused by
-        // a non-repeatable key such as Shift or a repeatable key that
-        // was pressed before sLastRepeatableHardwareKeyCode was
-        // pressed.
-        break;
-      }
-      sRepeatState = NOT_PRESSED;
-      MOZ_LOG(gKeyLog, LogLevel::Info,
-              ("FilterEvents(aXEvent={ type=KeyRelease, "
-               "xkey={ keycode=0x%08X, state=0x%08X, time=%lu } }, "
-               "aGdkEvent={ state=0x%08X }), "
-               "detected key release",
-               xEvent->xkey.keycode, xEvent->xkey.state, xEvent->xkey.time,
-               reinterpret_cast<GdkEventKey*>(aGdkEvent)->state));
-      break;
-    }
-    case FocusOut: {
-      // At moving focus, we should reset keyboard repeat state.
-      // Strictly, this causes incorrect behavior.  However, this
-      // correctness must be enough for web applications.
-      sRepeatState = NOT_PRESSED;
-      break;
-    }
-    default: {
-      KeymapWrapper* self = static_cast<KeymapWrapper*>(aData);
-      if (xEvent->type != self->mXKBBaseEventCode) {
-        break;
-      }
-      XkbEvent* xkbEvent = (XkbEvent*)xEvent;
-      if (xkbEvent->any.xkb_type != XkbControlsNotify ||
-          !(xkbEvent->ctrls.changed_ctrls & XkbPerKeyRepeatMask)) {
-        break;
-      }
-      if (!XGetKeyboardControl(xkbEvent->any.display, &self->mKeyboardState)) {
-        MOZ_LOG(gKeyLog, LogLevel::Info,
-                ("%p FilterEvents failed due to failure "
-                 "of XGetKeyboardControl(), display=0x%p",
-                 self, xkbEvent->any.display));
-      }
-      break;
-    }
-  }
-
-  return GDK_FILTER_CONTINUE;
-}
-#endif
 
 static void ResetBidiKeyboard() {
   // Reset the bidi keyboard settings for the new GdkKeymap
@@ -1741,34 +1364,7 @@ guint KeymapWrapper::GetModifierState(GdkEventKey* aGdkKeyEvent,
   if (!aGdkKeyEvent->is_modifier) {
     return state;
   }
-#ifdef MOZ_X11
-  // NOTE: The state of given key event indicates adjacent state of
-  // modifier keys.  E.g., even if the event is Shift key press event,
-  // the bit for Shift is still false.  By the same token, even if the
-  // event is Shift key release event, the bit for Shift is still true.
-  // Unfortunately, gdk_keyboard_get_modifiers() returns current modifier
-  // state.  It means if there're some pending modifier key press or
-  // key release events, the result isn't what we want.
-  GdkDisplay* gdkDisplay = gdk_display_get_default();
-  if (GdkIsX11Display(gdkDisplay)) {
-    GdkDisplay* gdkDisplay = gdk_display_get_default();
-    Display* display = gdk_x11_display_get_xdisplay(gdkDisplay);
-    if (XEventsQueued(display, QueuedAfterReading)) {
-      XEvent nextEvent;
-      XPeekEvent(display, &nextEvent);
-      if (nextEvent.type == aWrapper->mXKBBaseEventCode) {
-        XkbEvent* XKBEvent = (XkbEvent*)&nextEvent;
-        if (XKBEvent->any.xkb_type == XkbStateNotify) {
-          XkbStateNotifyEvent* stateNotifyEvent =
-              (XkbStateNotifyEvent*)XKBEvent;
-          state &= ~0xFF;
-          state |= stateNotifyEvent->lookup_mods;
-        }
-      }
-    }
-    return state;
-  }
-#endif
+
 #ifdef MOZ_WAYLAND
   int mask = 0;
   switch (aGdkKeyEvent->keyval) {
@@ -2091,15 +1687,7 @@ bool KeymapWrapper::IsLatinGroup(guint8 aGroup) {
 }
 
 bool KeymapWrapper::IsAutoRepeatableKey(guint aHardwareKeyCode) {
-#ifdef MOZ_X11
-  uint8_t indexOfArray = aHardwareKeyCode / 8;
-  MOZ_ASSERT(indexOfArray < ArrayLength(mKeyboardState.auto_repeats),
-             "invalid index");
-  char bitMask = 1 << (aHardwareKeyCode % 8);
-  return (mKeyboardState.auto_repeats[indexOfArray] & bitMask) != 0;
-#else
   return false;
-#endif
 }
 
 /* static */

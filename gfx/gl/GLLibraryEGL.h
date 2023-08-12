@@ -5,10 +5,6 @@
 #ifndef GLLIBRARYEGL_H_
 #define GLLIBRARYEGL_H_
 
-#if defined(MOZ_X11)
-#  include "mozilla/X11Util.h"
-#endif
-
 #include "base/platform_thread.h"  // for PlatformThreadId
 #include "gfxEnv.h"
 #include "GLTypes.h"
@@ -30,11 +26,7 @@
 #  include "mozilla/ProfilerLabels.h"
 #endif
 
-#if defined(MOZ_X11)
-#  define EGL_DEFAULT_DISPLAY ((EGLNativeDisplayType)mozilla::DefaultXDisplay())
-#else
-#  define EGL_DEFAULT_DISPLAY ((EGLNativeDisplayType)0)
-#endif
+#define EGL_DEFAULT_DISPLAY ((EGLNativeDisplayType)0)
 
 struct ID3D11Device;
 

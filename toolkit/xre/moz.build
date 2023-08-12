@@ -115,12 +115,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         "nsGDKErrorHandler.cpp",
     ]
 
-if CONFIG["MOZ_X11"]:
-    EXPORTS += ["nsX11ErrorHandler.h"]
-    UNIFIED_SOURCES += [
-        "nsX11ErrorHandler.cpp",
-    ]
-
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     UNIFIED_SOURCES += [
         "nsAndroidStartup.cpp",

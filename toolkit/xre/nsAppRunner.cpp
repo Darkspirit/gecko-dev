@@ -334,9 +334,6 @@ nsCString gDesktopEntryName;
 #    include <gdk/gdkwayland.h>
 #    include "mozilla/widget/nsWaylandDisplay.h"
 #  endif
-#  ifdef MOZ_X11
-#    include <gdk/gdkx.h>
-#  endif /* MOZ_X11 */
 #endif
 #include "BinaryPath.h"
 
@@ -416,46 +413,7 @@ static void UnexpectedExit() {
   }
 }
 
-#if defined(MOZ_WAYLAND)
-bool IsWaylandEnabled() {
-  static bool isWaylandEnabled = []() {
-    const char* waylandDisplay = PR_GetEnv("WAYLAND_DISPLAY");
-    if (!waylandDisplay) {
-      return false;
-    }
-    if (!PR_GetEnv("DISPLAY")) {
-      // No X11 display, so try to run wayland.
-      return true;
-    }
-    // MOZ_ENABLE_WAYLAND is our primary Wayland on/off switch.
-    if (const char* waylandPref = PR_GetEnv("MOZ_ENABLE_WAYLAND")) {
-      return *waylandPref == '1';
-    }
-    if (const char* backendPref = PR_GetEnv("GDK_BACKEND")) {
-      if (!strncmp(backendPref, "wayland", 7)) {
-        NS_WARNING(
-            "Wayland backend should be enabled by MOZ_ENABLE_WAYLAND=1."
-            "GDK_BACKEND is a Gtk3 debug variable and may cause issues.");
-        return true;
-      }
-    }
-    // Enable by default when we're running on a recent enough GTK version. We'd
-    // like to check further details like compositor version and so on ideally
-    // to make sure we don't enable it on old Mutter or what not, but we can't,
-    // so let's assume that if the user is running on a Wayland session by
-    // default we're ok, since either the distro has enabled Wayland by default,
-    // or the user has gone out of their way to use Wayland.
-    //
-    // TODO(emilio): If users hit problems, we might be able to restrict it to
-    // GNOME / KDE  / known-good-desktop environments by checking
-    // XDG_CURRENT_DESKTOP or so...
-    return !gtk_check_version(3, 24, 30);
-  }();
-  return isWaylandEnabled;
-}
-#else
-bool IsWaylandEnabled() { return false; }
-#endif
+bool IsWaylandEnabled() { return true; }
 
 /**
  * Output a string to the user.  This method is really only meant to be used to
@@ -2119,12 +2077,6 @@ static void DumpHelp() {
       "       where options include:\n\n",
       gArgv[0]);
 
-#ifdef MOZ_X11
-  printf(
-      "X11 options\n"
-      "  --display=DISPLAY  X display to use\n"
-      "  --sync             Make X calls synchronous\n");
-#endif
 #ifdef XP_UNIX
   printf(
       "  --g-fatal-warnings Make all warnings fatal\n"
@@ -3752,9 +3704,6 @@ static bool CheckForUserMismatch() {
 #  ifdef MOZ_WIDGET_GTK
       "XDG_RUNTIME_DIR",
 #  endif
-#  ifdef MOZ_X11
-      "XAUTHORITY",
-#  endif
   };
 
   const uid_t euid = geteuid();
@@ -4725,15 +4674,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
   // Initialize GTK here for splash.
 
-#  if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
-  // Disable XInput2 multidevice support due to focus bugginess.
-  // See bugs 1182700, 1170342.
-  // gdk_disable_multidevice() affects Gdk X11 backend only,
-  // the multidevice support is always enabled on Wayland backend.
-  const char* useXI2 = PR_GetEnv("MOZ_USE_XINPUT2");
-  if (!useXI2 || (*useXI2 == '0')) gdk_disable_multidevice();
-#  endif
-
   // Open the display ourselves instead of using gtk_init, so that we can
   // close it without fear that one day gtk might clean up the display it
   // opens.
@@ -4777,14 +4717,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 #endif
 
-#ifdef MOZ_X11
-  // Init X11 in thread-safe mode. Must be called prior to the first call to
-  // XOpenDisplay (called inside gdk_display_open). This is a requirement for
-  // off main tread compositing.
-  if (!isBackgroundTaskMode && !gfxPlatform::IsHeadless()) {
-    XInitThreads();
-  }
-#endif
 #if defined(MOZ_WIDGET_GTK)
   if (!isBackgroundTaskMode && !gfxPlatform::IsHeadless()) {
     const char* display_name = nullptr;
@@ -4800,12 +4732,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     }
 
     bool waylandEnabled = IsWaylandEnabled();
-#ifdef MOZ_X11
-    if (!waylandEnabled) {
-      // Enabling glthread crashes on X11/EGL, see bug 1670545
-      PR_SetEnv("mesa_glthread=false");
-    }
-#endif
     // On Wayland disabled builds read X11 DISPLAY env exclusively
     // and don't care about different displays.
     if (!waylandEnabled && !display_name) {
@@ -4841,15 +4767,13 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #  endif
     // Check that Wayland only and X11 only builds
     // use appropriate displays.
-#  if defined(MOZ_WAYLAND) && !defined(MOZ_X11)
+#  if defined(MOZ_WAYLAND)
     if (!GdkIsWaylandDisplay()) {
       Output(true, "Wayland only build is missig Wayland display!\n");
     }
 #  endif
-#  if !defined(MOZ_WAYLAND) && defined(MOZ_X11)
-    if (!GdkIsX11Display()) {
-      Output(true, "X11 only build is missig X11 display!\n");
-    }
+#  if !defined(MOZ_WAYLAND)
+   Output(true, "X11 only build is not supported, you need to build and run on Wayland!\n");
 #  endif
   }
 #endif
@@ -4868,10 +4792,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   g_set_application_name(mAppData->name);
 
 #endif /* defined(MOZ_WIDGET_GTK) */
-#ifdef MOZ_X11
-  // Do this after initializing GDK, or GDK will install its own handler.
-  XRE_InstallX11ErrorHandler();
-#endif
 
   // Call the code to install our handler
 #ifdef MOZ_JPROF
@@ -5966,10 +5886,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 
   // run!
   rv = XRE_mainRun();
-
-#ifdef MOZ_X11
-  XRE_CleanupX11ErrorHandler();
-#endif
 
 #ifdef MOZ_INSTRUMENT_EVENT_LOOP
   mozilla::ShutdownEventTracing();

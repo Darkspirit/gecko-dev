@@ -52,12 +52,6 @@ EXPORTS.mozilla.gfx += [
     "WPFGpuRaster.h",
 ]
 
-if CONFIG["MOZ_X11"]:
-    EXPORTS.mozilla += ["X11Util.h"]
-    SOURCES += [
-        "X11Util.cpp",
-    ]
-
 UNIFIED_SOURCES += [
     "DriverCrashGuard.cpp",
     "FilterSupport.cpp",

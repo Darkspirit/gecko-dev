@@ -9,9 +9,6 @@
 
 #include "nsArrayUtils.h"
 #include "nsClipboard.h"
-#if defined(MOZ_X11)
-#  include "nsClipboardX11.h"
-#endif
 #if defined(MOZ_WAYLAND)
 #  include "nsClipboardWayland.h"
 #endif
@@ -41,10 +38,6 @@
 #include "imgIContainer.h"
 
 #include <gtk/gtk.h>
-#if defined(MOZ_X11)
-#  include <gtk/gtkx.h>
-#endif
-
 #include "mozilla/Encoding.h"
 
 using namespace mozilla;
@@ -216,11 +209,6 @@ nsClipboard::~nsClipboard() {
 NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, ClipboardSetDataHelper, nsIObserver)
 
 nsresult nsClipboard::Init(void) {
-#if defined(MOZ_X11)
-  if (widget::GdkIsX11Display()) {
-    mContext = new nsRetrievalContextX11();
-  }
-#endif
 #if defined(MOZ_WAYLAND)
   if (widget::GdkIsWaylandDisplay()) {
     mContext = new nsRetrievalContextWayland();

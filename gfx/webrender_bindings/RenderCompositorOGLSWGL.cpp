@@ -30,9 +30,6 @@
 #ifdef MOZ_WIDGET_GTK
 #  include "mozilla/widget/GtkCompositorWidget.h"
 #  include <gdk/gdk.h>
-#  ifdef MOZ_X11
-#    include <gdk/gdkx.h>
-#  endif
 #endif
 
 namespace mozilla {

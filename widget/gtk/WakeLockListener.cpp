@@ -16,13 +16,6 @@
 #  include "nsIXULAppInfo.h"
 #  include "WidgetUtilsGtk.h"
 
-#  if defined(MOZ_X11)
-#    include "prlink.h"
-#    include <gdk/gdk.h>
-#    include <gdk/gdkx.h>
-#    include "X11UndefineNone.h"
-#  endif
-
 #  if defined(MOZ_WAYLAND)
 #    include "mozilla/widget/nsWaylandDisplay.h"
 #    include "nsWindow.h"
@@ -58,9 +51,6 @@ enum WakeLockDesktopEnvironment {
   FreeDesktopScreensaver,
   FreeDesktopPower,
   GNOME,
-#  if defined(MOZ_X11)
-  XScreenSaver,
-#  endif
 #  if defined(MOZ_WAYLAND)
   WaylandIdleInhibit,
 #  endif
@@ -93,11 +83,6 @@ class WakeLockTopic {
   bool SendFreeDesktopScreensaverInhibitMessage();
   bool SendGNOMEInhibitMessage();
   bool SendMessage(DBusMessage* aMessage);
-
-#  if defined(MOZ_X11)
-  static bool CheckXScreenSaverSupport();
-  static bool InhibitXScreenSaver(bool inhibit);
-#  endif
 
 #  if defined(MOZ_WAYLAND)
   zwp_idle_inhibitor_v1* mWaylandInhibitor;
@@ -210,74 +195,6 @@ bool WakeLockTopic::SendGNOMEInhibitMessage() {
   return SendMessage(message);
 }
 
-#  if defined(MOZ_X11)
-
-typedef Bool (*_XScreenSaverQueryExtension_fn)(Display* dpy, int* event_base,
-                                               int* error_base);
-typedef Bool (*_XScreenSaverQueryVersion_fn)(Display* dpy, int* major,
-                                             int* minor);
-typedef void (*_XScreenSaverSuspend_fn)(Display* dpy, Bool suspend);
-
-static PRLibrary* sXssLib = nullptr;
-static _XScreenSaverQueryExtension_fn _XSSQueryExtension = nullptr;
-static _XScreenSaverQueryVersion_fn _XSSQueryVersion = nullptr;
-static _XScreenSaverSuspend_fn _XSSSuspend = nullptr;
-
-/* static */
-bool WakeLockTopic::CheckXScreenSaverSupport() {
-  if (!sXssLib) {
-    sXssLib = PR_LoadLibrary("libXss.so.1");
-    if (!sXssLib) {
-      return false;
-    }
-  }
-
-  _XSSQueryExtension = (_XScreenSaverQueryExtension_fn)PR_FindFunctionSymbol(
-      sXssLib, "XScreenSaverQueryExtension");
-  _XSSQueryVersion = (_XScreenSaverQueryVersion_fn)PR_FindFunctionSymbol(
-      sXssLib, "XScreenSaverQueryVersion");
-  _XSSSuspend = (_XScreenSaverSuspend_fn)PR_FindFunctionSymbol(
-      sXssLib, "XScreenSaverSuspend");
-  if (!_XSSQueryExtension || !_XSSQueryVersion || !_XSSSuspend) {
-    return false;
-  }
-
-  GdkDisplay* gDisplay = gdk_display_get_default();
-  if (!GdkIsX11Display(gDisplay)) {
-    return false;
-  }
-  Display* display = GDK_DISPLAY_XDISPLAY(gDisplay);
-
-  int throwaway;
-  if (!_XSSQueryExtension(display, &throwaway, &throwaway)) return false;
-
-  int major, minor;
-  if (!_XSSQueryVersion(display, &major, &minor)) return false;
-  // Needs to be compatible with version 1.1
-  if (major != 1) return false;
-  if (minor < 1) return false;
-
-  return true;
-}
-
-/* static */
-bool WakeLockTopic::InhibitXScreenSaver(bool inhibit) {
-  // Should only be called if CheckXScreenSaverSupport returns true.
-  // There's a couple of safety checks here nonetheless.
-  if (!_XSSSuspend) {
-    return false;
-  }
-  GdkDisplay* gDisplay = gdk_display_get_default();
-  if (!GdkIsX11Display(gDisplay)) {
-    return false;
-  }
-  Display* display = GDK_DISPLAY_XDISPLAY(gDisplay);
-  _XSSSuspend(display, inhibit);
-  return true;
-}
-
-#  endif
-
 #  if defined(MOZ_WAYLAND)
 
 /* static */
@@ -335,11 +252,6 @@ bool WakeLockTopic::SendInhibit() {
       WAKE_LOCK_LOG("SendInhibit(): GNOME");
       sendOk = SendGNOMEInhibitMessage();
       break;
-#  if defined(MOZ_X11)
-    case XScreenSaver:
-      WAKE_LOCK_LOG("SendInhibit(): InhibitXScreenSaver");
-      return InhibitXScreenSaver(true);
-#  endif
 #  if defined(MOZ_WAYLAND)
     case WaylandIdleInhibit:
       WAKE_LOCK_LOG("SendInhibit(): WaylandIdleInhibit");
@@ -375,12 +287,6 @@ bool WakeLockTopic::SendUninhibit() {
         SESSION_MANAGER_TARGET, SESSION_MANAGER_OBJECT,
         SESSION_MANAGER_INTERFACE, "Uninhibit"));
   }
-#  if defined(MOZ_X11)
-  else if (mDesktopEnvironment == XScreenSaver) {
-    WAKE_LOCK_LOG("SendUninhibit(): XScreenSaver");
-    return InhibitXScreenSaver(false);
-  }
-#  endif
 #  if defined(MOZ_WAYLAND)
   else if (mDesktopEnvironment == WaylandIdleInhibit) {
     WAKE_LOCK_LOG("SendUninhibit(): Wayland");
@@ -446,11 +352,6 @@ void WakeLockTopic::InhibitFailed() {
     mDesktopEnvironment = GNOME;
   } else if (mDesktopEnvironment == GNOME) {
     mDesktopEnvironment = FreeDesktopPower;
-#  if defined(MOZ_X11)
-  } else if (mDesktopEnvironment == FreeDesktopPower &&
-             CheckXScreenSaverSupport()) {
-    mDesktopEnvironment = XScreenSaver;
-#  endif
 #  if defined(MOZ_WAYLAND)
   } else if (mDesktopEnvironment == FreeDesktopPower &&
              CheckWaylandIdleInhibitSupport()) {

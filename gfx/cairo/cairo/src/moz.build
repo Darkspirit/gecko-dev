@@ -73,24 +73,6 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'beos':
         'cairo-beos-surface.cpp',
     ]
 
-if CONFIG['MOZ_X11']:
-    EXPORTS.cairo += [
-        'cairo-xlib-xrender.h',
-        'cairo-xlib.h',
-    ]
-    SOURCES += [
-        'cairo-xlib-core-compositor.c',
-        'cairo-xlib-display.c',
-        'cairo-xlib-fallback-compositor.c',
-        'cairo-xlib-render-compositor.c',
-        'cairo-xlib-screen.c',
-        'cairo-xlib-source.c',
-        'cairo-xlib-surface-shm.c',
-        'cairo-xlib-surface.c',
-        'cairo-xlib-visual.c',
-        'cairo-xlib-xcb-surface.c',
-    ]
-
 if CONFIG['MOZ_ENABLE_CAIRO_FT']:
     EXPORTS.cairo += [
         'cairo-ft.h',
@@ -275,9 +257,6 @@ else:
 if CONFIG['CC_TYPE'] in ('clang', 'gcc') and CONFIG['OS_TARGET'] == 'Android' and CONFIG['MOZ_OPTIMIZE']:
     CFLAGS += ['-O2']
     CXXFLAGS += ['-O2']
-
-if CONFIG['MOZ_X11']:
-    CFLAGS += CONFIG['MOZ_X11_CFLAGS']
 
 if CONFIG['MOZ_ENABLE_CAIRO_FT']:
     CFLAGS += CONFIG['CAIRO_FT_CFLAGS']

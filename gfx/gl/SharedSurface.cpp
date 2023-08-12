@@ -135,12 +135,6 @@ UniquePtr<SurfaceFactory> SurfaceFactory::Create(
     case layers::TextureType::Last:
       break;
   }
-
-#ifdef MOZ_X11
-  // Silence a warning.
-  Unused << gl;
-#endif
-
   return nullptr;
 }
 

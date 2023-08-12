@@ -1019,41 +1019,6 @@ system_headers = [
     'theora/theoradec.h'
 ]
 
-if CONFIG['MOZ_X11']:
-    system_headers += [
-        'gdk/gdkx.h',
-        'gtk/gtkx.h',
-        'X11/cursorfont.h',
-        'X11/extensions/Print.h',
-        'X11/extensions/scrnsaver.h',
-        'X11/extensions/shape.h',
-        'X11/extensions/Xcomposite.h',
-        'X11/extensions/Xdamage.h',
-        'X11/extensions/Xfixes.h',
-        'X11/extensions/Xrandr.h',
-        'X11/extensions/XShm.h',
-        'X11/extensions/XTest.h',
-        'X11/ImUtil.h',
-        'X11/Intrinsic.h',
-        'X11/keysymdef.h',
-        'X11/keysym.h',
-        'X11/Shell.h',
-        'X11/StringDefs.h',
-        'X11/Xatom.h',
-        'X11/Xft/Xft.h',
-        'X11/Xfuncproto.h',
-        'X11/X.h',
-        'X11/XKBlib.h',
-        'X11/Xlib.h',
-        'X11/Xlibint.h',
-        'X11/Xlib-xcb.h',
-        'X11/Xlocale.h',
-        'X11/Xos.h',
-        'X11/Xutil.h',
-        'xcb/shm.h',
-        'xcb/xcb.h',
-    ]
-
 if CONFIG['OS_TARGET'] == 'Android':
     system_headers += [
         'android/api-level.h',

@@ -16,11 +16,6 @@
 #  include "mozilla/StaticPrefs_widget.h"
 #  include "WindowSurfaceWaylandMultiBuffer.h"
 #endif
-#ifdef MOZ_X11
-#  include "mozilla/X11Util.h"
-#  include "WindowSurfaceX11Image.h"
-#  include "WindowSurfaceX11SHM.h"
-#endif
 
 #undef LOG
 #ifdef MOZ_LOGGING
@@ -42,13 +37,6 @@ WindowSurfaceProvider::WindowSurfaceProvider()
     : mWindowSurface(nullptr),
       mMutex("WindowSurfaceProvider"),
       mWindowSurfaceValid(false)
-#ifdef MOZ_X11
-      ,
-      mIsShaped(false),
-      mXDepth(0),
-      mXWindow(0),
-      mXVisual(nullptr)
-#endif
 {
 }
 
@@ -63,28 +51,12 @@ void WindowSurfaceProvider::Initialize(GtkCompositorWidget* aCompositorWidget) {
   mWidget = static_cast<nsWindow*>(aCompositorWidget->RealWidget());
 }
 #endif
-#ifdef MOZ_X11
-void WindowSurfaceProvider::Initialize(Window aWindow, Visual* aVisual,
-                                       int aDepth, bool aIsShaped) {
-  mWindowSurfaceValid = false;
-  mXWindow = aWindow;
-  mXVisual = aVisual;
-  mXDepth = aDepth;
-  mIsShaped = aIsShaped;
-}
-#endif
 
 void WindowSurfaceProvider::CleanupResources() {
   MutexAutoLock lock(mMutex);
   mWindowSurfaceValid = false;
 #ifdef MOZ_WAYLAND
   mWidget = nullptr;
-#endif
-#ifdef MOZ_X11
-  mXWindow = 0;
-  mXVisual = 0;
-  mXDepth = 0;
-  mIsShaped = false;
 #endif
 }
 
@@ -96,28 +68,6 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
       return nullptr;
     }
     return MakeRefPtr<WindowSurfaceWaylandMB>(mWidget, mCompositorWidget);
-  }
-#endif
-#ifdef MOZ_X11
-  if (GdkIsX11Display()) {
-    // We're called too early or we're unmapped.
-    if (!mXWindow) {
-      return nullptr;
-    }
-    // Blit to the window with the following priority:
-    // 1. MIT-SHM
-    // 2. XPutImage
-#  ifdef MOZ_HAVE_SHMIMAGE
-    if (!mIsShaped && nsShmImage::UseShm()) {
-      LOG(("Drawing to Window 0x%lx will use MIT-SHM\n", mXWindow));
-      return MakeRefPtr<WindowSurfaceX11SHM>(DefaultXDisplay(), mXWindow,
-                                             mXVisual, mXDepth);
-    }
-#  endif  // MOZ_HAVE_SHMIMAGE
-
-    LOG(("Drawing to Window 0x%lx will use XPutImage\n", mXWindow));
-    return MakeRefPtr<WindowSurfaceX11Image>(DefaultXDisplay(), mXWindow,
-                                             mXVisual, mXDepth, mIsShaped);
   }
 #endif
   MOZ_RELEASE_ASSERT(false);
@@ -147,17 +97,6 @@ WindowSurfaceProvider::StartRemoteDrawingInRegion(
 
   *aBufferMode = BufferMode::BUFFER_NONE;
   RefPtr<gfx::DrawTarget> dt = mWindowSurface->Lock(aInvalidRegion);
-#ifdef MOZ_X11
-  if (!dt && GdkIsX11Display() && !mWindowSurface->IsFallback()) {
-    // We can't use WindowSurfaceX11Image fallback on Wayland but
-    // Lock() call on WindowSurfaceWayland should never fail.
-    gfxWarningOnce()
-        << "Failed to lock WindowSurface, falling back to XPutImage backend.";
-    mWindowSurface = MakeRefPtr<WindowSurfaceX11Image>(
-        DefaultXDisplay(), mXWindow, mXVisual, mXDepth, mIsShaped);
-    dt = mWindowSurface->Lock(aInvalidRegion);
-  }
-#endif
   return dt.forget();
 }
 

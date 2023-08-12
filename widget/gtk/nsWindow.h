@@ -31,10 +31,6 @@
 #  include "mozilla/a11y/LocalAccessible.h"
 #endif
 
-#ifdef MOZ_X11
-#  include <gdk/gdkx.h>
-#  include "X11UndefineNone.h"
-#endif
 #ifdef MOZ_WAYLAND
 #  include <gdk/gdkwayland.h>
 #  include "base/thread.h"
@@ -78,7 +74,7 @@ extern mozilla::LazyLogModule gWidgetVsync;
 
 #endif /* MOZ_LOGGING */
 
-#if defined(MOZ_WAYLAND) && !defined(MOZ_X11)
+#if defined(MOZ_WAYLAND)
 typedef uintptr_t Window;
 #endif
 
@@ -107,9 +103,6 @@ namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
 
 class TimeStamp;
-#ifdef MOZ_X11
-class CurrentX11TimeGetter;
-#endif
 
 namespace widget {
 class Screen;
@@ -298,9 +291,6 @@ class nsWindow final : public nsBaseWidget {
 
   WidgetEventTime GetWidgetEventTime(guint32 aEventTime);
   mozilla::TimeStamp GetEventTimeStamp(guint32 aEventTime);
-#ifdef MOZ_X11
-  mozilla::CurrentX11TimeGetter* GetCurrentTimeGetter();
-#endif
 
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override;
@@ -920,9 +910,6 @@ class nsWindow final : public nsBaseWidget {
    */
   RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
-#ifdef MOZ_X11
-  mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
-#endif
   static GtkWindowDecoration sGtkWindowDecoration;
 
   static bool sTransparentMainWindow;
@@ -975,13 +962,6 @@ class nsWindow final : public nsBaseWidget {
 
   void SetUserTimeAndStartupTokenForActivatedWindow();
 
-#ifdef MOZ_X11
-  typedef enum {GTK_WIDGET_COMPOSIDED_DEFAULT = 0,
-                GTK_WIDGET_COMPOSIDED_DISABLED = 1,
-                GTK_WIDGET_COMPOSIDED_ENABLED = 2} WindowComposeRequest;
-  void SetCompositorHint(WindowComposeRequest aState);
-  bool ConfigureX11GLVisual();
-#endif
 #ifdef MOZ_WAYLAND
   RefPtr<mozilla::WaylandVsyncSource> mWaylandVsyncSource;
   RefPtr<mozilla::VsyncDispatcher> mWaylandVsyncDispatcher;

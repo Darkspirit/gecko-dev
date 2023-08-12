@@ -14,9 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/inotify.h>
-#ifdef MOZ_X11
-#  include <X11/Xlib.h>
-#endif
 
 // Signal number used to enable seccomp on each thread.
 extern mozilla::Atomic<int> gSeccompTsyncBroadcastSignum;

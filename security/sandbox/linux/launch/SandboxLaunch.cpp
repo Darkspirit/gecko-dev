@@ -44,17 +44,6 @@
 #include "prenv.h"
 #include "sandbox/linux/system_headers/linux_syscalls.h"
 
-#ifdef MOZ_X11
-#  ifndef MOZ_WIDGET_GTK
-#    error "Unknown toolkit"
-#  endif
-#  include "mozilla/WidgetUtilsGtk.h"
-#  include <gdk/gdk.h>
-#  include <gdk/gdkx.h>
-#  include "X11UndefineNone.h"
-#  include "gfxPlatform.h"
-#endif
-
 namespace mozilla {
 
 // Returns true if graphics will work from a content process
@@ -70,76 +59,6 @@ static bool IsGraphicsOkWithoutNetwork() {
   // socket.  This is done instead of trying to parse the display name
   // because an empty hostname (e.g., ":0") will fall back to TCP in
   // case of failure to connect using Unix-domain sockets.
-#ifdef MOZ_X11
-  // First, ensure that the parent process's graphics are initialized.
-  DebugOnly<gfxPlatform*> gfxPlatform = gfxPlatform::GetPlatform();
-
-  const auto display = gdk_display_get_default();
-  if (!display) {
-    // In this case, the browser is headless, but WebGL could still
-    // try to use X11.  However, WebGL isn't supported with remote
-    // X11, and in any case these connections are made after sandbox
-    // startup (lazily when WebGL is used), so they aren't being done
-    // directly by the process anyway.  (For local X11, they're
-    // brokered.)
-    MOZ_ASSERT(gfxPlatform->IsHeadless());
-    return true;
-  }
-  if (mozilla::widget::GdkIsX11Display(display)) {
-    const int xSocketFd = ConnectionNumber(GDK_DISPLAY_XDISPLAY(display));
-    if (NS_WARN_IF(xSocketFd < 0)) {
-      return false;
-    }
-
-    int domain;
-    socklen_t optlen = static_cast<socklen_t>(sizeof(domain));
-    int rv = getsockopt(xSocketFd, SOL_SOCKET, SO_DOMAIN, &domain, &optlen);
-    if (NS_WARN_IF(rv != 0)) {
-      return false;
-    }
-    MOZ_RELEASE_ASSERT(static_cast<size_t>(optlen) == sizeof(domain));
-    if (domain != AF_LOCAL) {
-      return false;
-    }
-    // There's one more complication: Xorg listens on named sockets
-    // (actual filesystem nodes) as well as abstract addresses (opaque
-    // octet strings scoped to the network namespace; this is a Linux
-    // extension).
-    //
-    // Inside a container environment (e.g., when running as a Snap
-    // package), it's possible that only the abstract addresses are
-    // accessible.  In that case, the display must be considered
-    // remote.  See also bug 1450740.
-    //
-    // Unfortunately, the Xorg client libraries prefer the abstract
-    // addresses, so this isn't directly detectable by inspecting the
-    // parent process's socket.  Instead, parse the DISPLAY env var
-    // (which was updated if necessary in nsAppRunner.cpp) to get the
-    // display number and construct the socket path, falling back to
-    // testing the directory in case that doesn't work.  (See bug
-    // 1565972 and bug 1559368 for cases where we need to test the
-    // specific socket.)
-    const char* const displayStr = PR_GetEnv("DISPLAY");
-    nsAutoCString socketPath("/tmp/.X11-unix");
-    int accessFlags = X_OK;
-    int displayNum;
-    // sscanf ignores trailing text, so display names with a screen
-    // number (e.g., ":0.2") will parse correctly.
-    if (displayStr && (sscanf(displayStr, ":%d", &displayNum) == 1 ||
-                       sscanf(displayStr, "unix:%d", &displayNum) == 1)) {
-      socketPath.AppendPrintf("/X%d", displayNum);
-      accessFlags = R_OK | W_OK;
-    }
-    if (access(socketPath.get(), accessFlags) != 0) {
-      SANDBOX_LOG_ERRNO(
-          "%s is inaccessible; can't isolate network namespace in"
-          " content processes",
-          socketPath.get());
-      return false;
-    }
-  }
-#endif
-
   // Assume that other backends (e.g., Wayland) will not use the
   // network namespace.
   return true;

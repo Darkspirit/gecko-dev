@@ -28,10 +28,6 @@
 #  include "gfxWindowsSurface.h"
 #endif
 
-#ifdef MOZ_X11
-#  include "gfxXlibSurface.h"
-#endif
-
 #ifdef CAIRO_HAS_QUARTZ_SURFACE
 #  include "gfxQuartzSurface.h"
 #endif
@@ -146,11 +142,6 @@ already_AddRefed<gfxASurface> gfxASurface::Wrap(cairo_surface_t* csurf,
   else if (stype == CAIRO_SURFACE_TYPE_WIN32 ||
            stype == CAIRO_SURFACE_TYPE_WIN32_PRINTING) {
     result = new gfxWindowsSurface(csurf);
-  }
-#endif
-#ifdef MOZ_X11
-  else if (stype == CAIRO_SURFACE_TYPE_XLIB) {
-    result = new gfxXlibSurface(csurf);
   }
 #endif
 #ifdef CAIRO_HAS_QUARTZ_SURFACE

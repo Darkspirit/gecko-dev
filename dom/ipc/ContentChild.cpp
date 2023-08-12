@@ -235,10 +235,6 @@
 #  include <sys/qos.h>
 #endif /* XP_MACOSX */
 
-#ifdef MOZ_X11
-#  include "mozilla/X11Util.h"
-#endif
-
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #  ifdef XP_WIN
@@ -738,13 +734,6 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   }
 #endif
 
-#ifdef MOZ_X11
-  if (!gfxPlatform::IsHeadless()) {
-    // Do this after initializing GDK, or GDK will install its own handler.
-    XRE_InstallX11ErrorHandler();
-  }
-#endif
-
   MOZ_ASSERT(!sSingleton, "only one ContentChild per child");
 
   // Once we start sending IPC messages, we need the thread manager to be
@@ -776,17 +765,6 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
 
 #if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
   StartOpenBSDSandbox(GeckoProcessType_Content);
-#endif
-
-#ifdef MOZ_X11
-#  ifdef MOZ_WIDGET_GTK
-  if (GdkIsX11Display() && !gfxPlatform::IsHeadless()) {
-    // Send the parent our X socket to act as a proxy reference for our X
-    // resources.
-    int xSocketFd = ConnectionNumber(DefaultXDisplay());
-    SendBackUpXResources(FileDescriptor(xSocketFd));
-  }
-#  endif
 #endif
 
   CrashReporterClient::InitSingleton(this);

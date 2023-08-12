@@ -131,18 +131,6 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
         "PrintTargetPDF.cpp",
     ]
 
-    if CONFIG["MOZ_X11"]:
-        EXPORTS += [
-            "gfxXlibSurface.h",
-        ]
-        EXPORTS.mozilla.gfx += [
-            "XlibDisplay.h",
-        ]
-        SOURCES += [
-            "gfxXlibSurface.cpp",
-            "XlibDisplay.cpp",
-        ]
-
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXPORTS += [
         "gfxDWriteCommon.h",

@@ -49,7 +49,6 @@
 #  include "chrome/common/mach_ipc_mac.h"
 #  include "gfxPlatformMac.h"
 #endif
-#include "nsX11ErrorHandler.h"
 #include "nsGDKErrorHandler.h"
 #include "base/at_exit.h"
 #include "base/message_loop.h"
@@ -123,10 +122,6 @@
 
 #if defined(MOZ_ENABLE_FORKSERVER)
 #  include "mozilla/ipc/ForkServer.h"
-#endif
-
-#if defined(MOZ_X11)
-#  include <X11/Xlib.h>
 #endif
 
 #include "VRProcessChild.h"
@@ -417,9 +412,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   gArgv = aArgv;
   gArgc = aArgc;
 
-#ifdef MOZ_X11
-  XInitThreads();
-#endif
 #ifdef MOZ_WIDGET_GTK
   // Setting the name here avoids the need to pass this through to gtk_init().
   g_set_prgname(aArgv[0]);
@@ -800,24 +792,6 @@ bool XRE_ShutdownTestShell() {
   NS_RELEASE(gContentParent);
   return ret;
 }
-
-#ifdef MOZ_X11
-void XRE_InstallX11ErrorHandler() {
-#  ifdef MOZ_WIDGET_GTK
-  InstallGdkErrorHandler();
-#  endif
-
-  // Ensure our X11 error handler overrides the default GDK error handler such
-  // that errors are ignored by default. GDK will install its own error handler
-  // temporarily when pushing error traps internally as needed. This avoids us
-  // otherwise having to frequently override the error handler merely to trap
-  // errors in multiple places that would otherwise contend with GDK or other
-  // libraries that might also override the handler.
-  InstallX11ErrorHandler();
-}
-
-void XRE_CleanupX11ErrorHandler() { CleanupX11ErrorHandler(); }
-#endif
 
 #ifdef MOZ_ENABLE_FORKSERVER
 int XRE_ForkServer(int* aArgc, char*** aArgv) {

@@ -45,12 +45,6 @@
 #include "nsLayoutUtils.h"
 #include "Theme.h"
 
-#ifdef MOZ_X11
-#  ifdef CAIRO_HAS_XLIB_SURFACE
-#    include "cairo-xlib.h"
-#  endif
-#endif
-
 #include <algorithm>
 #include <dlfcn.h>
 
@@ -581,46 +575,6 @@ static void DrawThemeWithCairo(gfxContext* aContext, DrawTarget* aDrawTarget,
 
   Size clipSize((aDrawSize.width + aScaleFactor - 1) / aScaleFactor,
                 (aDrawSize.height + aScaleFactor - 1) / aScaleFactor);
-
-  // A direct Cairo draw target is not available, so we need to create a
-  // temporary one.
-#if defined(MOZ_X11) && defined(CAIRO_HAS_XLIB_SURFACE)
-  if (GdkIsX11Display()) {
-    // If using a Cairo xlib surface, then try to reuse it.
-    BorrowedXlibDrawable borrow(aDrawTarget);
-    if (Drawable drawable = borrow.GetDrawable()) {
-      nsIntSize size = borrow.GetSize();
-      cairo_surface_t* surf = cairo_xlib_surface_create(
-          borrow.GetDisplay(), drawable, borrow.GetVisual(), size.width,
-          size.height);
-      if (!NS_WARN_IF(!surf)) {
-        Point offset = borrow.GetOffset();
-        if (offset != Point()) {
-          cairo_surface_set_device_offset(surf, offset.x, offset.y);
-        }
-        cairo_t* cr = cairo_create(surf);
-        if (!NS_WARN_IF(!cr)) {
-          RefPtr<SystemCairoClipper> clipper = new SystemCairoClipper(cr);
-          aContext->ExportClip(*clipper);
-
-          cairo_set_matrix(cr, &mat);
-
-          cairo_new_path(cr);
-          cairo_rectangle(cr, 0, 0, clipSize.width, clipSize.height);
-          cairo_clip(cr);
-
-          moz_gtk_widget_paint(aGTKWidgetType, cr, &aGDKRect, &aState, aFlags,
-                               aDirection);
-
-          cairo_destroy(cr);
-        }
-        cairo_surface_destroy(surf);
-      }
-      borrow.Finish();
-      return;
-    }
-  }
-#endif
 
   // Check if the widget requires complex masking that must be composited.
   // Try to directly write to the draw target's pixels if possible.

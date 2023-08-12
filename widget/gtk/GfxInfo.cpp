@@ -244,8 +244,6 @@ void GfxInfo::GetData() {
 
   nsCString drmRenderDevice;
 
-  nsCString ddxDriver;
-
   AutoTArray<nsCString, 2> pciVendors;
   AutoTArray<nsCString, 2> pciDevices;
 
@@ -280,8 +278,6 @@ void GfxInfo::GetData() {
       stringToFill = &mesaAccelerated;
     } else if (!strcmp(line, "MESA_VRAM")) {
       stringToFill = &adapterRam;
-    } else if (!strcmp(line, "DDX_DRIVER")) {
-      stringToFill = &ddxDriver;
     } else if (!strcmp(line, "DRI_DRIVER")) {
       stringToFill = &driDriver;
     } else if (!strcmp(line, "PCI_VENDOR_ID")) {
@@ -545,18 +541,6 @@ void GfxInfo::GetData() {
   // using X11.
   mIsWayland = GdkIsWaylandDisplay();
   mIsXWayland = IsXWaylandProtocol();
-
-  if (!ddxDriver.IsEmpty()) {
-    PRInt32 start = 0;
-    PRInt32 loc = ddxDriver.Find(";", start);
-    while (loc != kNotFound) {
-      nsCString line(ddxDriver.get() + start, loc - start);
-      mDdxDrivers.AppendElement(std::move(line));
-
-      start = loc + 1;
-      loc = ddxDriver.Find(";", start);
-    }
-  }
 
   if (error || errorLog || mTestType.IsEmpty()) {
     if (!mAdapterDescription.IsEmpty()) {
@@ -1212,15 +1196,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       aFailureId = "FEATURE_FAILURE_OPENGL_LESS_THAN_3";
       return NS_OK;
-    }
-
-    // Bug 1710400: Disable Webrender on the deprecated Intel DDX driver
-    for (const nsCString& driver : mDdxDrivers) {
-      if (strcasestr(driver.get(), "Intel")) {
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-        aFailureId = "FEATURE_FAILURE_DDX_INTEL";
-        return NS_OK;
-      }
     }
   }
 

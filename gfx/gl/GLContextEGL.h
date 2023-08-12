@@ -111,10 +111,6 @@ class GLContextEGL final : public GLContext {
   static EGLSurface CreateEGLSurfaceForCompositorWidget(
       widget::CompositorWidget* aCompositorWidget, const EGLConfig aConfig);
 
-#ifdef MOZ_X11
-  static bool FindVisual(int* const out_visualId);
-#endif
-
  protected:
   friend class GLContextProviderEGL;
   friend class GLContextEGLFactory;

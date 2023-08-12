@@ -36,7 +36,3 @@ if CONFIG['MOZ_WEBRTC']:
     elif CONFIG['OS_TARGET'] == 'Android':
         DEFINES['WEBRTC_LINUX'] = True
         DEFINES['WEBRTC_ANDROID'] = True
-
-    if CONFIG['MOZ_X11']:
-        DEFINES['WEBRTC_USE_X11'] = True
-

@@ -160,7 +160,6 @@ flatpak build-finish build                                      \
         --env=GTK_PATH=/app/lib/gtkmodules                      \
         --socket=pulseaudio                                     \
         --socket=wayland                                        \
-        --socket=fallback-x11                                   \
         --socket=pcsc                                           \
         --socket=cups                                           \
         --require-version=1.0.0                                 \

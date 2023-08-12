@@ -16,11 +16,6 @@
 #include "Units.h"
 #include "mozilla/ScopeExit.h"
 
-#ifdef MOZ_X11
-#  include <X11/Xlib.h>  // for Window, Display, Visual, etc.
-#  include "X11UndefineNone.h"
-#endif
-
 class nsWindow;
 
 namespace mozilla {
@@ -48,10 +43,6 @@ class WindowSurfaceProvider final {
   void Initialize(RefPtr<nsWindow> aWidget);
   void Initialize(GtkCompositorWidget* aCompositorWidget);
 #endif
-#ifdef MOZ_X11
-  void Initialize(Window aWindow, Visual* aVisual, int aDepth, bool aIsShaped);
-#endif
-
   /**
    * Releases any surfaces created by this provider.
    * This is used by GtkCompositorWidget to get rid
@@ -86,12 +77,6 @@ class WindowSurfaceProvider final {
   // WindowSurfaceProvider is owned by GtkCompositorWidget so we don't need
   // to reference it.
   GtkCompositorWidget* mCompositorWidget = nullptr;
-#endif
-#ifdef MOZ_X11
-  bool mIsShaped;
-  int mXDepth;
-  Window mXWindow;
-  Visual* mXVisual;
 #endif
 };
 

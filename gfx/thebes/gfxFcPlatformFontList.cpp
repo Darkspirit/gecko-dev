@@ -48,10 +48,6 @@
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
-#ifdef MOZ_X11
-#  include "mozilla/X11Util.h"
-#endif
-
 #if defined(MOZ_SANDBOX) && defined(XP_LINUX)
 #  include "mozilla/SandboxBrokerPolicyFactory.h"
 #  include "mozilla/SandboxSettings.h"
@@ -733,27 +729,6 @@ static void PrepareFontOptions(FcPattern* aPattern, int* aOutLoadFlags,
   *aOutLoadFlags = loadFlags;
   *aOutSynthFlags = synthFlags;
 }
-
-#ifdef MOZ_X11
-static bool GetXftInt(Display* aDisplay, const char* aName, int* aResult) {
-  if (!aDisplay) {
-    return false;
-  }
-  char* value = XGetDefault(aDisplay, "Xft", aName);
-  if (!value) {
-    return false;
-  }
-  if (FcNameConstant(const_cast<FcChar8*>(ToFcChar8Ptr(value)), aResult)) {
-    return true;
-  }
-  char* end;
-  *aResult = strtol(value, &end, 0);
-  if (end != value) {
-    return true;
-  }
-  return false;
-}
-#endif
 
 static void PreparePattern(FcPattern* aPattern, bool aIsPrinterFont) {
   FcConfigSubstitute(nullptr, aPattern, FcMatchPattern);
@@ -2877,18 +2852,6 @@ bool gfxFcPlatformFontList::UpdateSystemFontOptions() {
   if (gfxPlatform::IsHeadless()) {
     return false;
   }
-
-#  ifdef MOZ_X11
-  {
-    // This one shouldn't change during the X session.
-    int lcdfilter;
-    GdkDisplay* dpy = gdk_display_get_default();
-    if (mozilla::widget::GdkIsX11Display(dpy) &&
-        GetXftInt(GDK_DISPLAY_XDISPLAY(dpy), "lcdfilter", &lcdfilter)) {
-      mFreetypeLcdSetting = lcdfilter;
-    }
-  }
-#  endif  // MOZ_X11
 
   const cairo_font_options_t* options =
       gdk_screen_get_font_options(gdk_screen_get_default());

@@ -1130,9 +1130,6 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvRemoveIdleObserver(const uint64_t& observerId,
                                                  const uint32_t& aIdleTimeInS);
 
-  mozilla::ipc::IPCResult RecvBackUpXResources(
-      const FileDescriptor& aXSocketFd);
-
   mozilla::ipc::IPCResult RecvRequestAnonymousTemporaryFile(
       const uint64_t& aID);
 

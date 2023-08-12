@@ -34,9 +34,6 @@
 #include "GRefPtr.h"
 #include "nsAppShell.h"
 
-#ifdef MOZ_X11
-#  include "gfxXlibSurface.h"
-#endif
 #include "gfxContext.h"
 #include "nsImageToPixbuf.h"
 #include "nsPresContext.h"

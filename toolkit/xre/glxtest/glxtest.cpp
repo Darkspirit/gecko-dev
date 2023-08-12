@@ -39,12 +39,6 @@
 #  include <stdio.h>
 #endif
 
-#ifdef MOZ_X11
-#  include "X11/Xlib.h"
-#  include "X11/Xutil.h"
-#  include <X11/extensions/Xrandr.h>
-#endif
-
 #include <vector>
 #include <sys/wait.h>
 #include "mozilla/ScopeExit.h"
@@ -132,17 +126,6 @@ typedef struct _drmDevice {
 #  define LIBGLES_FILENAME "libGLESv2.so.2"
 #  define LIBEGL_FILENAME "libEGL.so.1"
 #  define LIBDRM_FILENAME "libdrm.so.2"
-#endif
-
-#ifdef MOZ_X11
-static int x_error_handler(Display*, XErrorEvent* ev) {
-  record_value(
-      "ERROR\nX error, error_code=%d, "
-      "request_code=%d, minor_code=%d\n",
-      ev->error_code, ev->request_code, ev->minor_code);
-  record_flush();
-  _exit(EXIT_FAILURE);
-}
 #endif
 
 // childgltest is declared inside extern "C" so that the name is not mangled.
@@ -591,94 +574,6 @@ static bool get_egl_status(EGLNativeDisplayType native_dpy) {
   return ret;
 }
 
-#ifdef MOZ_X11
-static void get_xrandr_info(Display* dpy) {
-  log("GLX_TEST: get_xrandr_info start\n");
-
-  // When running on remote X11 the xrandr version may be stuck on an ancient
-  // version. There are still setups using remote X11 out there, so make sure we
-  // don't crash.
-  int eventBase, errorBase, major, minor;
-  if (!XRRQueryExtension(dpy, &eventBase, &errorBase) ||
-      !XRRQueryVersion(dpy, &major, &minor) ||
-      !(major > 1 || (major == 1 && minor >= 4))) {
-    log("GLX_TEST: get_xrandr_info failed, old version.\n");
-    return;
-  }
-
-  Window root = RootWindow(dpy, DefaultScreen(dpy));
-  XRRProviderResources* pr = XRRGetProviderResources(dpy, root);
-  if (!pr) {
-    log("GLX_TEST: XRRGetProviderResources failed.\n");
-    return;
-  }
-  XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
-  if (!res) {
-    XRRFreeProviderResources(pr);
-    log("GLX_TEST: XRRGetScreenResourcesCurrent failed.\n");
-    return;
-  }
-  if (pr->nproviders != 0) {
-    record_value("DDX_DRIVER\n");
-    for (int i = 0; i < pr->nproviders; i++) {
-      XRRProviderInfo* info = XRRGetProviderInfo(dpy, res, pr->providers[i]);
-      if (info) {
-        record_value("%s%s", info->name, i == pr->nproviders - 1 ? ";\n" : ";");
-        XRRFreeProviderInfo(info);
-      }
-    }
-  }
-  XRRFreeScreenResources(res);
-  XRRFreeProviderResources(pr);
-
-  log("GLX_TEST: get_xrandr_info finished\n");
-}
-
-bool x11_egltest() {
-  log("GLX_TEST: x11_egltest start\n");
-
-  Display* dpy = XOpenDisplay(nullptr);
-  if (!dpy) {
-    log("GLX_TEST: XOpenDisplay failed.\n");
-    return false;
-  }
-#  ifdef MOZ_ASAN
-  auto release = mozilla::MakeScopeExit([&] {
-    // Bug 1715245: Closing the display connection here crashes on NV prop.
-    // drivers. Just leave it open, the process will exit shortly after anyway.
-    XCloseDisplay(dpy);
-  });
-#  endif
-
-  XSetErrorHandler(x_error_handler);
-
-  if (!get_egl_status(dpy)) {
-    return false;
-  }
-
-  // Bug 1667621: 30bit "Deep Color" is broken on EGL on Mesa (as of 2021/10).
-  // Disable all non-standard depths for the initial EGL roleout.
-  int screenCount = ScreenCount(dpy);
-  for (int idx = 0; idx < screenCount; idx++) {
-    int depth = DefaultDepth(dpy, idx);
-    if (depth != 24) {
-      log("GLX_TEST: DefaultDepth() is %d, expected to be 24. See Bug "
-          "1667621.\n",
-          depth);
-      return false;
-    }
-  }
-
-  // Get monitor and DDX driver information
-  get_xrandr_info(dpy);
-
-  record_value("TEST_TYPE\nEGL\n");
-
-  log("GLX_TEST: x11_egltest finished\n");
-  return true;
-}
-#endif
-
 #ifdef MOZ_WAYLAND
 void wayland_egltest() {
   log("GLX_TEST: wayland_egltest start\n");
@@ -717,22 +612,14 @@ void wayland_egltest() {
 }
 #endif
 
-int childgltest(bool aWayland) {
+int childgltest() {
   log("GLX_TEST: childgltest start\n");
 
   // Get a list of all GPUs from the PCI bus.
   get_pci_status();
 
 #ifdef MOZ_WAYLAND
-  if (aWayland) {
-    wayland_egltest();
-  }
-#endif
-#ifdef MOZ_X11
-  if (!aWayland) {
-    // TODO: --display command line argument is not properly handled
-    x11_egltest();
-  }
+  wayland_egltest();
 #endif
   // Finally write buffered data to the pipe.
   record_flush();
@@ -753,15 +640,12 @@ static void PrintUsage() {
       "\n"
       "  -h --help                 show this message\n"
       "  -f --fd num               where to print output, default it stdout\n"
-      "  -w --wayland              probe OpenGL/EGL on Wayland (default is "
-      "X11)\n"
       "\n");
 }
 
 int main(int argc, char** argv) {
   struct option longOptions[] = {{"help", no_argument, nullptr, 'h'},
                                  {"fd", required_argument, nullptr, 'f'},
-                                 {"wayland", no_argument, nullptr, 'w'},
                                  {nullptr, 0, nullptr, 0}};
   const char* shortOptions = "hf:w";
   int c;
@@ -769,9 +653,6 @@ int main(int argc, char** argv) {
   while ((c = getopt_long(argc, argv, shortOptions, longOptions, nullptr)) !=
          -1) {
     switch (c) {
-      case 'w':
-        wayland = true;
-        break;
       case 'f':
         output_pipe = atoi(optarg);
         break;
@@ -803,5 +684,5 @@ int main(int argc, char** argv) {
   // report which can confuse the harness in fuzzing automation.
   signal(SIGSEGV, SIG_DFL);
 #endif
-  return childgltest(wayland);
+  return childgltest();
 }

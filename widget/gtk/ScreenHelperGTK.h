@@ -10,10 +10,6 @@
 #include "mozilla/widget/ScreenManager.h"
 
 #include "gdk/gdk.h"
-#ifdef MOZ_X11
-#  include <X11/Xlib.h>
-#  include "X11UndefineNone.h"
-#endif
 
 class nsWindow;
 struct wl_registry;
@@ -41,18 +37,11 @@ class ScreenGetterGtk : public ScreenGetter {
 
   void Init();
 
-#ifdef MOZ_X11
-  Atom NetWorkareaAtom() { return mNetWorkareaAtom; }
-#endif
-
   // For internal use from signal callback functions
   void RefreshScreens();
 
  private:
   GdkWindow* mRootWindow;
-#ifdef MOZ_X11
-  Atom mNetWorkareaAtom;
-#endif
 };
 
 class ScreenGetterWayland;
