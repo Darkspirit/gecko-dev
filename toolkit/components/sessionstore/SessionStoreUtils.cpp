@@ -228,7 +228,6 @@ void SessionStoreUtils::CollectDocShellCapabilities(const GlobalObject& aGlobal,
   TRY_ALLOWPROP(Subframes);
   TRY_ALLOWPROP(Images);
   TRY_ALLOWPROP(Media);
-  TRY_ALLOWPROP(DNSPrefetch);
   TRY_ALLOWPROP(WindowControl);
   TRY_ALLOWPROP(Auth);
   TRY_ALLOWPROP(ContentRetargeting);
@@ -244,7 +243,6 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
   aDocShell->SetAllowSubframes(true);
   aDocShell->SetAllowImages(true);
   aDocShell->SetAllowMedia(true);
-  aDocShell->SetAllowDNSPrefetch(true);
   aDocShell->SetAllowWindowControl(true);
   aDocShell->SetAllowContentRetargeting(true);
   aDocShell->SetAllowContentRetargetingOnChildren(true);
@@ -264,8 +262,6 @@ void SessionStoreUtils::RestoreDocShellCapabilities(
       aDocShell->SetAllowImages(false);
     } else if (token.EqualsLiteral("Media")) {
       aDocShell->SetAllowMedia(false);
-    } else if (token.EqualsLiteral("DNSPrefetch")) {
-      aDocShell->SetAllowDNSPrefetch(false);
     } else if (token.EqualsLiteral("WindowControl")) {
       aDocShell->SetAllowWindowControl(false);
     } else if (token.EqualsLiteral("ContentRetargeting")) {

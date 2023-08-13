@@ -8,7 +8,6 @@
 
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/HTMLAnchorElementBinding.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsCOMPtr.h"
@@ -25,7 +24,6 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Anchor)
 namespace mozilla::dom {
 
 HTMLAnchorElement::~HTMLAnchorElement() {
-  SupportsDNSPrefetch::Destroyed(*this);
 }
 
 bool HTMLAnchorElement::IsInteractiveHTMLContent() const {
@@ -67,22 +65,10 @@ nsresult HTMLAnchorElement::BindToTree(BindContext& aContext,
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Prefetch links
-  if (IsInComposedDoc()) {
-    aContext.OwnerDoc().RegisterPendingLinkUpdate(this);
-    TryDNSPrefetch(*this);
-  }
-
   return rv;
 }
 
 void HTMLAnchorElement::UnbindFromTree(bool aNullParent) {
-  // Cancel any DNS prefetches
-  // Note: Must come before ResetLinkState.  If called after, it will recreate
-  // mCachedURI based on data that is invalid - due to a call to Link::GetURI()
-  // via GetURIForDNSPrefetch().
-  CancelDNSPrefetch(*this);
-
   // Without removing the link state we risk a dangling pointer
   // in the mStyledLinks hashtable
   Link::ResetLinkState(false, Link::ElementHasHref());
@@ -188,9 +174,6 @@ already_AddRefed<nsIURI> HTMLAnchorElement::GetHrefURI() const {
 
 void HTMLAnchorElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                       const nsAttrValue* aValue, bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::href) {
-    CancelDNSPrefetch(*this);
-  }
   return nsGenericHTMLElement::BeforeSetAttr(aNamespaceID, aName, aValue,
                                              aNotify);
 }
@@ -200,15 +183,6 @@ void HTMLAnchorElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                      const nsAttrValue* aOldValue,
                                      nsIPrincipal* aSubjectPrincipal,
                                      bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::href) {
-      Link::ResetLinkState(aNotify, !!aValue);
-      if (aValue && IsInComposedDoc()) {
-        TryDNSPrefetch(*this);
-      }
-    }
-  }
-
   return nsGenericHTMLElement::AfterSetAttr(
       aNamespaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
 }

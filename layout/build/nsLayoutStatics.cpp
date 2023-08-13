@@ -44,7 +44,6 @@
 #include "nsHtml5Module.h"
 #include "nsHTMLTags.h"
 #include "nsFocusManager.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/SVGElementFactory.h"
 #include "nsLanguageAtomService.h"
@@ -180,12 +179,6 @@ nsresult nsLayoutStatics::Initialize() {
   StaticPresData::Init();
   nsCSSRendering::Init();
   css::ImageLoader::Init();
-
-  rv = HTMLDNSPrefetch::Initialize();
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Could not initialize HTML DNS prefetch");
-    return rv;
-  }
 
   nsMathMLOperators::AddRefTable();
 
@@ -328,7 +321,6 @@ void nsLayoutStatics::Shutdown() {
   IMEStateManager::Shutdown();
   EditorController::Shutdown();
   HTMLEditorController::Shutdown();
-  HTMLDNSPrefetch::Shutdown();
   nsCSSRendering::Shutdown();
   StaticPresData::Shutdown();
   nsLanguageAtomService::Shutdown();

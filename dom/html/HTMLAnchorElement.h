@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/AnchorAreaFormRelValues.h"
 #include "mozilla/dom/Link.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "nsGenericHTMLElement.h"
 #include "nsDOMTokenList.h"
 
@@ -21,7 +20,6 @@ namespace dom {
 
 class HTMLAnchorElement final : public nsGenericHTMLElement,
                                 public Link,
-                                public SupportsDNSPrefetch,
                                 public AnchorAreaFormRelValues {
  public:
   using Element::GetText;

@@ -26,9 +26,4 @@ interface nsPIDNSService : nsIDNSService
      * this method.
      */
     void shutdown();
-
-    /**
-     * Whether or not DNS prefetching (aka RESOLVE_SPECULATE) is enabled
-     */
-    attribute boolean prefetchEnabled;
 };

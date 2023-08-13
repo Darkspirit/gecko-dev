@@ -917,20 +917,6 @@ bool nsDNSService::GetOffline() const {
   return offline;
 }
 
-NS_IMETHODIMP
-nsDNSService::GetPrefetchEnabled(bool* outVal) {
-  MutexAutoLock lock(mLock);
-  *outVal = !mDisablePrefetch;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDNSService::SetPrefetchEnabled(bool inVal) {
-  MutexAutoLock lock(mLock);
-  mDisablePrefetch = !inVal;
-  return NS_OK;
-}
-
 already_AddRefed<nsHostResolver> nsDNSService::GetResolverLocked() {
   MutexAutoLock lock(mLock);
   return do_AddRef(mResolver);
@@ -989,7 +975,7 @@ nsresult nsDNSService::AsyncResolveInternal(
   {
     MutexAutoLock lock(mLock);
 
-    if (mDisablePrefetch && (flags & RESOLVE_SPECULATE)) {
+    if (flags & RESOLVE_SPECULATE) {
       return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
     }
 
@@ -1069,7 +1055,7 @@ nsresult nsDNSService::CancelAsyncResolveInternal(
   {
     MutexAutoLock lock(mLock);
 
-    if (mDisablePrefetch && (aFlags & RESOLVE_SPECULATE)) {
+    if (aFlags & RESOLVE_SPECULATE) {
       return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
     }
 

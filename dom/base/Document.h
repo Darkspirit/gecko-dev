@@ -2850,8 +2850,6 @@ class Document : public nsINode,
     --mIgnoreDestructiveWritesCounter;
   }
 
-  bool IsDNSPrefetchAllowed() const { return mAllowDNSPrefetch; }
-
   /**
    * Returns true if this document is allowed to contain XUL element and
    * use non-builtin XBL bindings.
@@ -4623,10 +4621,6 @@ class Document : public nsINode,
   // (it may still be displayed, but in zombie state). Form control data
   // has been saved.
   bool mRemovedFromDocShell : 1;
-
-  // True iff DNS prefetch is allowed for this document.  Note that if the
-  // document has no window, DNS prefetch won't be performed no matter what.
-  bool mAllowDNSPrefetch : 1;
 
   // True when this document is a static clone of a normal document
   bool mIsStaticDocument : 1;

@@ -76,7 +76,6 @@ nsCString ContentSessionStore::CollectDocShellCapabilities() {
   TRY_ALLOWPROP(Subframes);
   TRY_ALLOWPROP(Images);
   TRY_ALLOWPROP(Media);
-  TRY_ALLOWPROP(DNSPrefetch);
   TRY_ALLOWPROP(WindowControl);
   TRY_ALLOWPROP(Auth);
   TRY_ALLOWPROP(ContentRetargeting);

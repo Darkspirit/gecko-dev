@@ -431,10 +431,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   mWebNav = do_QueryInterface(webBrowser);
   NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
 
-  // IPC uses a WebBrowser object for which DNS prefetching is turned off
-  // by default. But here we really want it, so enable it explicitly
-  mWebBrowser->SetAllowDNSPrefetch(true);
-
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   MOZ_ASSERT(docShell);
 

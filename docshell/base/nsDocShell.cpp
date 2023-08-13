@@ -347,7 +347,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowMetaRedirects(true),
       mAllowImages(true),
       mAllowMedia(true),
-      mAllowDNSPrefetch(true),
       mAllowWindowControl(true),
       mCSSErrorReportingEnabled(false),
       mAllowAuth(mItemType == typeContent),
@@ -1992,18 +1991,6 @@ nsDocShell::SetAllowMedia(bool aAllowMedia) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GetAllowDNSPrefetch(bool* aAllowDNSPrefetch) {
-  *aAllowDNSPrefetch = mAllowDNSPrefetch;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::SetAllowDNSPrefetch(bool aAllowDNSPrefetch) {
-  mAllowDNSPrefetch = aAllowDNSPrefetch;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocShell::GetAllowWindowControl(bool* aAllowWindowControl) {
   *aAllowWindowControl = mAllowWindowControl;
   return NS_OK;
@@ -2665,10 +2652,6 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
         NS_SUCCEEDED(parentAsDocShell->GetAllowWindowControl(&value))) {
       SetAllowWindowControl(value);
     }
-    if (NS_FAILED(parentAsDocShell->GetAllowDNSPrefetch(&value))) {
-      value = false;
-    }
-    SetAllowDNSPrefetch(mAllowDNSPrefetch && value);
 
     // We don't need to inherit metaViewportOverride, because the viewport
     // is only relevant for the outermost nsDocShell, not for any iframes
@@ -7600,9 +7583,6 @@ nsresult nsDocShell::RestoreFromHistory() {
 
     bool allowMedia = childShell->GetAllowMedia();
 
-    bool allowDNSPrefetch;
-    childShell->GetAllowDNSPrefetch(&allowDNSPrefetch);
-
     bool allowContentRetargeting = childShell->GetAllowContentRetargeting();
     bool allowContentRetargetingOnChildren =
         childShell->GetAllowContentRetargetingOnChildren();
@@ -7616,7 +7596,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     childShell->SetAllowSubframes(allowSubframes);
     childShell->SetAllowImages(allowImages);
     childShell->SetAllowMedia(allowMedia);
-    childShell->SetAllowDNSPrefetch(allowDNSPrefetch);
     childShell->SetAllowContentRetargeting(allowContentRetargeting);
     childShell->SetAllowContentRetargetingOnChildren(
         allowContentRetargetingOnChildren);

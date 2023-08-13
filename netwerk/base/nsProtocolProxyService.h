@@ -306,14 +306,6 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
    */
   bool CanUseProxy(nsIURI* uri, int32_t defaultPort);
 
-  /**
-   * Disable Prefetch in the DNS service if a proxy is in use.
-   *
-   * @param aProxy
-   *        The proxy information
-   */
-  void MaybeDisableDNSPrefetch(nsIProxyInfo* aProxy);
-
  private:
   nsresult SetupPACThread(
       nsISerialEventTarget* mainThreadEventTarget = nullptr);

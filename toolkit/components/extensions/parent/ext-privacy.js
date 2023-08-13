@@ -53,13 +53,11 @@ ExtensionPreferencesManager.addSetting("network.networkPredictionEnabled", {
     "network.predictor.enabled",
     "network.prefetch-next",
     "network.http.speculative-parallel-limit",
-    "network.dns.disablePrefetch",
   ],
 
   setCallback(value) {
     return {
       "network.http.speculative-parallel-limit": value ? undefined : 0,
-      "network.dns.disablePrefetch": !value,
       "network.predictor.enabled": value,
       "network.prefetch-next": value,
     };
@@ -69,8 +67,7 @@ ExtensionPreferencesManager.addSetting("network.networkPredictionEnabled", {
     return (
       getBoolPref("network.predictor.enabled") &&
       getBoolPref("network.prefetch-next") &&
-      getIntPref("network.http.speculative-parallel-limit") > 0 &&
-      !getBoolPref("network.dns.disablePrefetch")
+      getIntPref("network.http.speculative-parallel-limit") > 0
     );
   },
 });

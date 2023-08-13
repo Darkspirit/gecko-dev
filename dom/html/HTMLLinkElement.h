@@ -8,7 +8,6 @@
 #define mozilla_dom_HTMLLinkElement_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/WeakPtr.h"
@@ -23,8 +22,7 @@ class PreloaderBase;
 namespace dom {
 
 class HTMLLinkElement final : public nsGenericHTMLElement,
-                              public LinkStyle,
-                              public SupportsDNSPrefetch {
+                              public LinkStyle {
  public:
   explicit HTMLLinkElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

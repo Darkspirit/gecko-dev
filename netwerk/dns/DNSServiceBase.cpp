@@ -16,14 +16,12 @@
 namespace mozilla::net {
 
 static const char kPrefProxyType[] = "network.proxy.type";
-static const char kPrefDisablePrefetch[] = "network.dns.disablePrefetch";
 static const char kPrefNetworkProxySOCKS[] = "network.proxy.socks";
 
 NS_IMPL_ISUPPORTS(DNSServiceBase, nsIObserver)
 
 void DNSServiceBase::AddPrefObserver(nsIPrefBranch* aPrefs) {
   aPrefs->AddObserver(kPrefProxyType, this, false);
-  aPrefs->AddObserver(kPrefDisablePrefetch, this, false);
   // Monitor these to see if there is a change in proxy configuration
   aPrefs->AddObserver(kPrefNetworkProxySOCKS, this, false);
 }
@@ -34,12 +32,6 @@ void DNSServiceBase::ReadPrefs(const char* aName) {
     if (NS_SUCCEEDED(Preferences::GetCString(kPrefNetworkProxySOCKS, socks))) {
       mHasSocksProxy = !socks.IsEmpty();
     }
-  }
-  if (!aName || !strcmp(aName, kPrefDisablePrefetch) ||
-      !strcmp(aName, kPrefProxyType)) {
-    mDisablePrefetch = Preferences::GetBool(kPrefDisablePrefetch, false) ||
-                       (StaticPrefs::network_proxy_type() ==
-                        nsIProtocolProxyService::PROXYCONFIG_MANUAL);
   }
 }
 

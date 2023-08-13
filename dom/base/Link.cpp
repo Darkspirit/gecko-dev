@@ -9,7 +9,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGAElement.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/IHistory.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsLayoutUtils.h"

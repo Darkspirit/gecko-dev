@@ -126,14 +126,6 @@ class NeckoParent : public PNeckoParent {
   mozilla::ipc::IPCResult RecvSpeculativeConnect(
       nsIURI* aURI, nsIPrincipal* aPrincipal,
       Maybe<OriginAttributes>&& aOriginAttributes, const bool& aAnonymous);
-  mozilla::ipc::IPCResult RecvHTMLDNSPrefetch(
-      const nsAString& hostname, const bool& isHttps,
-      const OriginAttributes& aOriginAttributes,
-      const nsIDNSService::DNSFlags& flags);
-  mozilla::ipc::IPCResult RecvCancelHTMLDNSPrefetch(
-      const nsAString& hostname, const bool& isHttps,
-      const OriginAttributes& aOriginAttributes,
-      const nsIDNSService::DNSFlags& flags, const nsresult& reason);
   PWebSocketEventListenerParent* AllocPWebSocketEventListenerParent(
       const uint64_t& aInnerWindowID);
   bool DeallocPWebSocketEventListenerParent(PWebSocketEventListenerParent*);

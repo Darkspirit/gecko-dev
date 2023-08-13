@@ -51,7 +51,6 @@
 #include "nsIObserverService.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "nsParserConstants.h"
@@ -301,10 +300,6 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader,
       PrefetchHref(aHeader.mHref, aHeader.mAs, aHeader.mType, aHeader.mMedia);
     }
 
-    if (!aHeader.mHref.IsEmpty() && (linkTypes & LinkStyle::eDNS_PREFETCH)) {
-      PrefetchDNS(aHeader.mHref);
-    }
-
     if (!aHeader.mHref.IsEmpty() && (linkTypes & LinkStyle::ePRECONNECT)) {
       Preconnect(aHeader.mHref, aHeader.mCrossOrigin);
     }
@@ -497,40 +492,6 @@ void nsContentSink::PreloadModule(const nsAString& aHref, const nsAString& aAs,
       uri, aHref, nsIContentPolicy::TYPE_SCRIPT, u"script"_ns, u"module"_ns,
       aNonce, aIntegrity, u""_ns, u""_ns, aCORS, aReferrerPolicy,
       aEarlyHintPreloaderId);
-}
-
-void nsContentSink::PrefetchDNS(const nsAString& aHref) {
-  nsAutoString hostname;
-  bool isHttps = false;
-
-  if (StringBeginsWith(aHref, u"//"_ns)) {
-    hostname = Substring(aHref, 2);
-  } else {
-    nsCOMPtr<nsIURI> uri;
-    NS_NewURI(getter_AddRefs(uri), aHref);
-    if (!uri) {
-      return;
-    }
-    nsresult rv;
-    bool isLocalResource = false;
-    rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE,
-                             &isLocalResource);
-    if (NS_SUCCEEDED(rv) && !isLocalResource) {
-      nsAutoCString host;
-      uri->GetHost(host);
-      CopyUTF8toUTF16(host, hostname);
-    }
-    isHttps = uri->SchemeIs("https");
-  }
-
-  if (!hostname.IsEmpty() && HTMLDNSPrefetch::IsAllowed(mDocument)) {
-    OriginAttributes oa;
-    StoragePrincipalHelper::GetOriginAttributesForNetworkState(mDocument, oa);
-
-    HTMLDNSPrefetch::Prefetch(hostname, isHttps, oa,
-                              mDocument->GetChannel()->GetTRRMode(),
-                              HTMLDNSPrefetch::Priority::Low);
-  }
 }
 
 void nsContentSink::Preconnect(const nsAString& aHref,

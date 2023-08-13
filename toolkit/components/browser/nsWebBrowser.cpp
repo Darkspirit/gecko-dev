@@ -577,11 +577,6 @@ nsWebBrowser::GetDocument(dom::Document** aDocument) {
   return mDocShell->GetDocument(aDocument);
 }
 
-void nsWebBrowser::SetAllowDNSPrefetch(bool aAllowPrefetch) {
-  MOZ_ASSERT(mDocShell);
-  mDocShell->SetAllowDNSPrefetch(aAllowPrefetch);
-}
-
 //*****************************************************************************
 // nsWebBrowser::nsIWebProgressListener
 //*****************************************************************************
@@ -1137,10 +1132,6 @@ void nsWebBrowser::SetDocShell(nsDocShell* aDocShell) {
     MOZ_ASSERT(!mDocShell, "Should not overwrite an existing value!");
 
     mDocShell = aDocShell;
-
-    // By default, do not allow DNS prefetch, so we don't break our frozen
-    // API.  Embeddors who decide to enable it should do so manually.
-    mDocShell->SetAllowDNSPrefetch(false);
   } else {
     if (mDocShellTreeOwner) {
       mDocShellTreeOwner->RemoveFromWatcher();  // evil twin of Add in Create()

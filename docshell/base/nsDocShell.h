@@ -1324,7 +1324,6 @@ class nsDocShell final : public nsDocLoader,
   bool mAllowMetaRedirects : 1;
   bool mAllowImages : 1;
   bool mAllowMedia : 1;
-  bool mAllowDNSPrefetch : 1;
   bool mAllowWindowControl : 1;
   bool mCSSErrorReportingEnabled : 1;
   bool mAllowAuth : 1;

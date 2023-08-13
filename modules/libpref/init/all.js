@@ -1403,9 +1403,6 @@ pref("network.dns.native-is-localhost", false);
 // a revalidation in the background.
 pref("network.dnsCacheExpirationGracePeriod", 60);
 
-// This preference can be used to turn off DNS prefetch.
-pref("network.dns.disablePrefetch", true);
-
 // This preference controls whether .onion hostnames are
 // rejected before being given to DNS. RFC 7686
 pref("network.dns.blockDotOnion", true);

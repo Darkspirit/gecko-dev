@@ -17,7 +17,6 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HTMLLinkElementBinding.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "nsContentUtils.h"
@@ -51,7 +50,7 @@ HTMLLinkElement::HTMLLinkElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
-HTMLLinkElement::~HTMLLinkElement() { SupportsDNSPrefetch::Destroyed(*this); }
+HTMLLinkElement::~HTMLLinkElement() {}
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(HTMLLinkElement)
 
@@ -112,7 +111,6 @@ void HTMLLinkElement::LinkRemoved() {
 }
 
 void HTMLLinkElement::UnbindFromTree(bool aNullParent) {
-  CancelDNSPrefetch(*this);
   CancelPrefetchOrPreload();
 
   // If this is reinserted back into the document it will not be
@@ -196,7 +194,6 @@ void HTMLLinkElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                     const nsAttrValue* aValue, bool aNotify) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aName == nsGkAtoms::href || aName == nsGkAtoms::rel)) {
-    CancelDNSPrefetch(*this);
     CancelPrefetchOrPreload();
   }
 
@@ -546,10 +543,6 @@ void HTMLLinkElement::
           uri, AttrValueToCORSMode(GetParsedAttr(nsGkAtoms::crossorigin)));
       return;
     }
-  }
-
-  if (linkTypes & eDNS_PREFETCH) {
-    TryDNSPrefetch(*this);
   }
 }
 

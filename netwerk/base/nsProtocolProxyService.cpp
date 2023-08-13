@@ -407,7 +407,6 @@ class nsAsyncResolveRequest final : public nsIRunnable,
     } else {
       LOG(("pac thread callback did not provide information %" PRIX32 "\n",
            static_cast<uint32_t>(mStatus)));
-      if (NS_SUCCEEDED(mStatus)) mPPS->MaybeDisableDNSPrefetch(mProxyInfo);
       EnsureResolveFlagsMatch();
       mCallback->OnProxyAvailable(this, mChannel, mProxyInfo, mStatus);
     }
@@ -2257,24 +2256,6 @@ nsresult nsProtocolProxyService::Resolve_Internal(nsIChannel* channel,
   }
 
   return NS_OK;
-}
-
-void nsProtocolProxyService::MaybeDisableDNSPrefetch(nsIProxyInfo* aProxy) {
-  // Disable Prefetch in the DNS service if a proxy is in use.
-  if (!aProxy) return;
-
-  nsCOMPtr<nsProxyInfo> pi = do_QueryInterface(aProxy);
-  if (!pi || !pi->mType || pi->mType == kProxyType_DIRECT) return;
-
-  // To avoid getting DNS service recursively, we directly use
-  // GetXPCOMSingleton().
-  nsCOMPtr<nsIDNSService> dns = nsDNSService::GetXPCOMSingleton();
-  if (!dns) return;
-  nsCOMPtr<nsPIDNSService> pdns = do_QueryInterface(dns);
-  if (!pdns) return;
-
-  // We lose the prefetch optimization for the life of the dns service.
-  pdns->SetPrefetchEnabled(false);
 }
 
 void nsProtocolProxyService::CopyFilters(nsTArray<RefPtr<FilterLink>>& aCopy) {

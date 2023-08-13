@@ -1463,13 +1463,6 @@ export var Policies = {
     },
   },
 
-  NetworkPrediction: {
-    onBeforeAddons(manager, param) {
-      setAndLockPref("network.dns.disablePrefetch", !param);
-      setAndLockPref("network.dns.disablePrefetchFromHTTPS", !param);
-    },
-  },
-
   NewTabPage: {
     onBeforeAddons(manager, param) {
       setAndLockPref("browser.newtabpage.enabled", param);

@@ -110,7 +110,7 @@ nsresult ChildDNSService::AsyncResolveInternal(
     }
   }
 
-  if (mDisablePrefetch && (flags & RESOLVE_SPECULATE)) {
+  if (flags & RESOLVE_SPECULATE) {
     return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
   }
 
@@ -161,7 +161,7 @@ nsresult ChildDNSService::CancelAsyncResolveInternal(
     const nsACString& aHostname, uint16_t aType, nsIDNSService::DNSFlags aFlags,
     nsIDNSAdditionalInfo* aInfo, nsIDNSListener* aListener, nsresult aReason,
     const OriginAttributes& aOriginAttributes) {
-  if (mDisablePrefetch && (aFlags & RESOLVE_SPECULATE)) {
+  if (aFlags & RESOLVE_SPECULATE) {
     return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
   }
 
@@ -434,18 +434,6 @@ nsresult ChildDNSService::Init() {
 }
 
 nsresult ChildDNSService::Shutdown() { return NS_OK; }
-
-NS_IMETHODIMP
-ChildDNSService::GetPrefetchEnabled(bool* outVal) {
-  *outVal = !mDisablePrefetch;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-ChildDNSService::SetPrefetchEnabled(bool inVal) {
-  mDisablePrefetch = !inVal;
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 ChildDNSService::ReportFailedSVCDomainName(const nsACString& aOwnerName,

@@ -1318,11 +1318,6 @@ Document::Document(const char* aContentType)
       mIsShowing(false),
       mVisible(true),
       mRemovedFromDocShell(false),
-      // mAllowDNSPrefetch starts true, so that we can always reliably && it
-      // with various values that might disable it.  Since we never prefetch
-      // unless we get a window, and in that case the docshell value will get
-      // &&-ed in, this is safe.
-      mAllowDNSPrefetch(true),
       mIsStaticDocument(false),
       mCreatingStaticClone(false),
       mHasPrintCallbacks(false),
@@ -4241,12 +4236,6 @@ void Document::UpdateReferrerInfoFromMeta(const nsAString& aMetaReferrer,
 void Document::SetPrincipals(nsIPrincipal* aNewPrincipal,
                              nsIPrincipal* aNewPartitionedPrincipal) {
   MOZ_ASSERT(!!aNewPrincipal == !!aNewPartitionedPrincipal);
-  if (aNewPrincipal && mAllowDNSPrefetch &&
-      StaticPrefs::network_dns_disablePrefetchFromHTTPS()) {
-    if (aNewPrincipal->SchemeIs("https")) {
-      mAllowDNSPrefetch = false;
-    }
-  }
 
   mCSSLoader->DeregisterFromSheetCache();
 
@@ -6922,12 +6911,6 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
     }
   }
 
-  if (aHeaderField == nsGkAtoms::headerDNSPrefetchControl &&
-      mAllowDNSPrefetch) {
-    // Chromium treats any value other than 'on' (case insensitive) as 'off'.
-    mAllowDNSPrefetch = aData.IsEmpty() || aData.LowerCaseEqualsLiteral("on");
-  }
-
   if (aHeaderField == nsGkAtoms::handheldFriendly) {
     mViewportType = Unknown;
   }
@@ -7814,21 +7797,6 @@ void Document::SetScriptGlobalObject(
     mLayoutHistoryState = nullptr;
     SetScopeObject(aScriptGlobalObject);
     mHasHadDefaultView = true;
-
-    if (mAllowDNSPrefetch) {
-      nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
-      if (docShell) {
-#ifdef DEBUG
-        nsCOMPtr<nsIWebNavigation> webNav =
-            do_GetInterface(aScriptGlobalObject);
-        NS_ASSERTION(SameCOMIdentity(webNav, docShell),
-                     "Unexpected container or script global?");
-#endif
-        bool allowDNSPrefetch;
-        docShell->GetAllowDNSPrefetch(&allowDNSPrefetch);
-        mAllowDNSPrefetch = allowDNSPrefetch;
-      }
-    }
 
     // If we are set in a window that is already focused we should remember this
     // as the time the document gained focus.
